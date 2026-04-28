@@ -1,0 +1,25 @@
+GradTrkMomRange_HD = 0.99
+IntTrkMomRange_HD = 0.00
+GradTrkMomMCS_HD = 0.76
+IntTrkMomMCS_HD = 0.36
+GradNuMuHadEnCont_HD = 0.52
+IntNuMuHadEnCont_HD = 0.00
+GradNuMuHadEnExit_HD = 0.56
+IntNuMuHadEnExit_HD = 0.00
+GradShwEnergy_HD = 0.91
+IntShwEnergy_HD = 0.03
+GradNuEHadEn_HD = 0.51
+IntNuEHadEn_HD = 0.04
+
+GradTrkMomRange_VD = 0.99
+IntTrkMomRange_VD = 0.00
+GradTrkMomMCS_VD = 0.76
+IntTrkMomMCS_VD = 0.36
+GradNuMuHadEnCont_VD = 0.52
+IntNuMuHadEnCont_VD = 0.00
+GradNuMuHadEnExit_VD = 0.56
+IntNuMuHadEnExit_VD = 0.00
+GradShwEnergy_VD = 0.91
+IntShwEnergy_VD = 0.03
+GradNuEHadEn_VD = 0.51
+IntNuEHadEn_VD = 0.04
