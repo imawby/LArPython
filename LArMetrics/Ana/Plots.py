@@ -29,7 +29,7 @@ def save_plot(fig, path) :
 #####################################################################################################################
 #####################################################################################################################
 
-class PlotVar :
+class VarProperties :
     def __init__(self, var_name, input_type_name, x_label, range, n_bins):
         self.var_name = var_name
         self.input_type_name = input_type_name
@@ -40,13 +40,13 @@ class PlotVar :
 #####################################################################################################################
 #####################################################################################################################
 
-def PlotVariable(input_array, plot_var, ax, color, label, show_under_over_flow=False) :
+def PlotVar(input_array, var_properties, ax, color, label, show_under_over_flow=False) :
     if (show_under_over_flow) :
-        input_array[input_array < plot_var.range[0]] = plot_var.range[0]
-        input_array[input_array > plot_var.range[1]] = plot_var.range[1]
+        input_array[input_array < var_properties.range[0]] = var_properties.range[0]
+        input_array[input_array > var_properties.range[1]] = var_properties.range[1]
     
     n_entries = input_array.shape[0]
-    hist_counts, bin_edges = np.histogram(input_array, bins=plot_var.n_bins, range=plot_var.range)
+    hist_counts, bin_edges = np.histogram(input_array, bins=var_properties.n_bins, range=var_properties.range)
     hist_fraction = hist_counts / n_entries
     
     # Plot with error == sqrt(n_i)/N
@@ -61,16 +61,16 @@ def PlotVariable(input_array, plot_var, ax, color, label, show_under_over_flow=F
 #####################################################################################################################
 #####################################################################################################################
 
-def PlotSignalBackgroundVar(flattened_branch, signal_mask, background_mask, plot_var, ax, x_label='', title='', show_under_over_flow=False) :
+def PlotSignalBackgroundVar(flattened_branch, signal_mask, background_mask, var_properties, ax, x_label='', title='', show_under_over_flow=False) :
     signal_var = flattened_branch[signal_mask]
     background_var = flattened_branch[background_mask]
 
-    PlotVariable(signal_var, plot_var, ax, 'blue', 'signal', show_under_over_flow)
-    PlotVariable(background_var, plot_var, ax, 'red', 'background', show_under_over_flow)
+    PlotVar(signal_var, var_properties, ax, 'blue', 'signal', show_under_over_flow)
+    PlotVar(background_var, var_properties, ax, 'red', 'background', show_under_over_flow)
     
     ax.set_title(title)
     ax.set_xlabel(x_label)
-    ax.set_ylabel(f'Fraction of {plot_var.input_type_name}')
+    ax.set_ylabel(f'Fraction of {var_properties.input_type_name}')
     ax.grid(True)
     ax.tick_params(labelbottom=True, bottom=True, labelleft=True, left=True)
     ax.legend()    
@@ -131,18 +131,8 @@ def PlotEnergySpectrumDecomposition(nusel_branches, tree_branch, class_masks, se
         colors.append(class_colour[class_index])
 
     # Plot stacked histogram
-    counts, bins, patches = ax.hist(
-     all_entries,
-     weights=all_weights,
-     bins=N_E_BINS,
-     range=N_E_RANGE,
-     stacked=True,
-     histtype='bar',
-     color=colors,
-     label=labels,
-     edgecolor='none',
-     alpha=0.75)
-
+    counts, bins, patches = ax.hist(all_entries, weights=all_weights, bins=N_E_BINS, range=N_E_RANGE, stacked=True,
+     histtype='bar', color=colors, label=labels, edgecolor='none', alpha=0.75)
     counts = np.atleast_2d(counts)
 
     # Draw boundaries between stacked layers
@@ -179,7 +169,6 @@ def GetSelectionMetrics(nusel_branches, signal_mask, selected_mask) :
 #####################################################################################################################
 
 def PlotSelectionMetrics(nusel_branches, signal_mask, selected_mask, fig, ax, title='') :
-
     pot_weights = nusel_branches['ProjectedPOTWeight']
     osc_weights = nusel_branches['OscProb'][:, 4]
     osc_weights = ak.where(nusel_branches['NC'] == 1, 1, osc_weights)

@@ -6,7 +6,7 @@ import Variables
 ####################################################################################################################################################
 
 def run_shower_validation(plot_dir_path, config_target_mask, config_reco_mask, int_masks, tier_masks, pdg_masks, shower_branches) :
-
+    print('Running Shower Validation...')
     for tier in Definitions.tiers :
         tier_mask = tier_masks[tier]
         
@@ -33,3 +33,4 @@ def run_shower_validation(plot_dir_path, config_target_mask, config_reco_mask, i
 
                 # Plot diff_var distributions
                 ValidationFunc.create_plots({'reco' : reco_mask}, shower_branches, ValidationFunc.PlotDiffVariable, Variables.Shower_diff_plotting_vars, f'{plot_dir_path}/Diff', plot_config)
+                

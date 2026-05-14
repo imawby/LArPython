@@ -1,4 +1,3 @@
-# Imports
 import argparse
 import numpy as np
 import uproot
@@ -8,64 +7,56 @@ import os
 
 import Plots
 
+##########################################################################################################
+
 def main(args) :
-
-    #########################
-    # Handle file
-    #########################
     file_name = f'{args.input_file}'
-    file = uproot.open(file_name)
+    with uproot.open(file_name) as file:    
+        tree = file['ccnuselection/ccnusel']
+        nusel_branches = tree.arrays(['Run', 'SubRun', 'Event', 
+                                      'RecoPFPTruePDG', 'RecoPFPTruePrimary', 'RecoPFPRecoCompleteness', 'RecoPFPRecoHitPurity',
+                                      'RecoPFPIsPrimary', 'RecoPFPTrackShowerScore', 'RecoPFPRecoNHits',
+                                      'RecoTrackDeflecAngleSD', 'RecoTrackLength',
+                                      'RecoTrackdEdxStart', 'RecoTrackdEdxEnd','RecoTrackdEdxEndRatio',
+                                      'RecoTrackMichelNHits', 'RecoTrackMichelElectronMVA', 'RecoTrackMichelRecoEnergyPlane2',
+                                      'RecoTrackEvalRatio', 'RecoTrackConcentration', 'RecoTrackCoreHaloRatio', 'RecoTrackConicalness',
+                                      'RecoShowerPandrizzleDisplacement', 'RecoShowerPandrizzledEdxBestPlane', 'RecoShowerPandrizzleDCA',
+                                      'RecoShowerPandrizzleWideness', 'RecoShowerPandrizzleEnergyDensity',
+                                      'RecoShowerPandrizzleEvalRatio', 'RecoShowerPandrizzleConcentration', 'RecoShowerPandrizzleCoreHaloRatio', 'RecoShowerPandrizzleConicalness',
+                                      'RecoShowerPandrizzleIsFilled',
+                                      'RecoShowerPandrizzleMinLargestProjectedGapSize', 'RecoShowerPandrizzleMaxInitialGapSize',
+                                      'RecoShowerPandrizzlePathwayLengthMin', 'RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D',
+                                      'RecoShowerPandrizzleMaxNPostShowerStartHits', 'RecoShowerPandrizzleMaxPostShowerStartOpeningAngle',
+                                      'RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry', 'RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius',
+                                      'RecoShowerPandrizzleMaxFoundHitRatio',
+                                      'RecoShowerPandrizzleMaxPostShowerStartScatterAngle', 'RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance',
+                                      'RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry',
+                                      'RecoShowerPandrizzleNViewsWithAmbiguousHits', 'RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy',
+                                      'RecoShowerPandrizzleModularPathwayLength',
+                                      'RecoShowerPandrizzleModularNuVertexChargeWeightedMeanRadialDistance',
+                                      'RecoShowerPandrizzleModularMaxNShowerHits'], library='ak')
 
-    #########################
-    # Get branches
-    #########################
-    tree = file['ccnuselection/ccnusel']
-    nusel_branches = tree.arrays(['Run', 'SubRun', 'Event', 
-                                  'RecoPFPTruePDG', 'RecoPFPTruePrimary', 'RecoPFPRecoCompleteness', 'RecoPFPRecoHitPurity',
-                                  'RecoPFPIsPrimary', 'RecoPFPTrackShowerScore',
-                                  'RecoTrackDeflecAngleSD', 'RecoTrackLength',
-                                  'RecoTrackdEdxStart', 'RecoTrackdEdxEnd','RecoTrackdEdxEndRatio',
-                                  'RecoTrackMichelNHits', 'RecoTrackMichelElectronMVA', 'RecoTrackMichelRecoEnergyPlane2',
-                                  'RecoTrackEvalRatio', 'RecoTrackConcentration', 'RecoTrackCoreHaloRatio', 'RecoTrackConicalness',
-                                  'RecoShowerPandrizzleDisplacement', 'RecoShowerPandrizzledEdxBestPlane', 'RecoShowerPandrizzleDCA',
-                                  'RecoShowerPandrizzleWideness', 'RecoShowerPandrizzleEnergyDensity',
-                                  'RecoShowerPandrizzleEvalRatio', 'RecoShowerPandrizzleConcentration', 'RecoShowerPandrizzleCoreHaloRatio', 'RecoShowerPandrizzleConicalness',
-                                  'RecoShowerPandrizzleIsFilled',
-                                  'RecoShowerPandrizzleMinLargestProjectedGapSize', 'RecoShowerPandrizzleMaxInitialGapSize',
-                                  'RecoShowerPandrizzlePathwayLengthMin', 'RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D',
-                                  'RecoShowerPandrizzleMaxNPostShowerStartHits', 'RecoShowerPandrizzleMaxPostShowerStartOpeningAngle',
-                                  'RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry', 'RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius',
-                                  'RecoShowerPandrizzleMaxFoundHitRatio',
-                                  'RecoShowerPandrizzleMaxPostShowerStartScatterAngle', 'RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance',
-                                  'RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry',
-                                  'RecoShowerPandrizzleNViewsWithAmbiguousHits', 'RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy',
-                                  'RecoShowerPandrizzleModularPathwayLength',
-                                  'RecoShowerPandrizzleModularNuVertexChargeWeightedMeanRadialDistance',
-                                  'RecoShowerPandrizzleModularMaxNShowerHits'], library='ak')
-
-    ##############
     # Global masks
-    ##############
     completeness_mask = (nusel_branches['RecoPFPRecoCompleteness'] > args.completeness_thr)
     purity_mask = (nusel_branches['RecoPFPRecoHitPurity'] > args.purity_thr)
     hit_mask = (nusel_branches['RecoPFPRecoNHits'] > args.hit_thr)
-    
-    ############################################################
+
+    #############################################################    
     # Pandizzle variables - Categories + binning match my thesis
-    ############################################################
+    #############################################################    
     pandizzle_vars_plot_dir = f'{args.plot_dir}/IzzleSelection/PandizzleBDTVars'
-    track_length_PV = Plots.PlotVar('', 'Tracks', 'Track Length [cm]', [0, 1000], 30)
-    wobbiliness_PV = Plots.PlotVar('', 'Tracks', 'Deviation From Straightness [cm]', [0, 40], 20)
-    dedx_start_PV = Plots.PlotVar('', 'Tracks', 'Initial dE/dx [MeV/cm]', [0, 10], 20)
-    dedx_end_PV = Plots.PlotVar('', 'Tracks', 'End dE/dx [MeV/cm]', [0, 10], 20)
-    dedx_end_ratio_PV = Plots.PlotVar('', 'Tracks', 'End Region dE/dx Ratio', [0, 4], 20)
-    michel_n_hits_PV =  Plots.PlotVar('', 'Tracks', 'Michel - Number of 2D Hits', [-2, 20], 22)
-    michel_electron_mva_PV =  Plots.PlotVar('', 'Tracks', 'Michel - MVA Electron Score', [-2, 1], 12)
-    michel_energy_PV =  Plots.PlotVar('', 'Tracks', 'Michel - Reco Energy [MeV]', [-2, 1], 12)
-    track_eval_ratio_PV =  Plots.PlotVar('', 'Tracks', 'Eigenvalue Ratio', [0.0, 0.1], 20)
-    track_concentration_PV =  Plots.PlotVar('', 'Tracks', 'Concentration [/cm]', [0, 20], 40)
-    track_core_halo_PV =  Plots.PlotVar('', 'Tracks', 'Halo-Core Ratio', [0, 10], 20)
-    track_conicalness_PV =  Plots.PlotVar('', 'Tracks', 'Conicalness [stupid units]', [0, 5], 20)
+    track_length_PV = Plots.VarProperties('', 'Tracks', 'Track Length [cm]', [0, 1000], 30)
+    wobbiliness_PV = Plots.VarProperties('', 'Tracks', 'Deviation From Straightness [cm]', [0, 40], 20)
+    dedx_start_PV = Plots.VarProperties('', 'Tracks', 'Initial dE/dx [MeV/cm]', [0, 10], 20)
+    dedx_end_PV = Plots.VarProperties('', 'Tracks', 'End dE/dx [MeV/cm]', [0, 10], 20)
+    dedx_end_ratio_PV = Plots.VarProperties('', 'Tracks', 'End Region dE/dx Ratio', [0, 4], 20)
+    michel_n_hits_PV =  Plots.VarProperties('', 'Tracks', 'Michel - Number of 2D Hits', [-2, 20], 22)
+    michel_electron_mva_PV =  Plots.VarProperties('', 'Tracks', 'Michel - MVA Electron Score', [-2, 1], 12)
+    michel_energy_PV =  Plots.VarProperties('', 'Tracks', 'Michel - Reco Energy [MeV]', [-2, 1], 12)
+    track_eval_ratio_PV =  Plots.VarProperties('', 'Tracks', 'Eigenvalue Ratio', [0.0, 0.1], 20)
+    track_concentration_PV =  Plots.VarProperties('', 'Tracks', 'Concentration [/cm]', [0, 20], 40)
+    track_core_halo_PV =  Plots.VarProperties('', 'Tracks', 'Halo-Core Ratio', [0, 10], 20)
+    track_conicalness_PV =  Plots.VarProperties('', 'Tracks', 'Conicalness [stupid units]', [0, 5], 20)
 
     # Target mask
     muon_target_mask = (nusel_branches['RecoPFPTruePrimary'] == 1) & (nusel_branches['RecoPFPIsPrimary'] == 1) & (nusel_branches['RecoPFPTrackShowerScore'] > 0.5) & completeness_mask & purity_mask & hit_mask
@@ -112,19 +103,19 @@ def main(args) :
     Plots.PlotSignalBackgroundVar(track_eval_ratio, muon_signal_mask, ~muon_signal_mask, track_eval_ratio_PV, ax[1][1], x_label=track_eval_ratio_PV.x_label, title='', show_under_over_flow=True)
     Plots.save_plot(fig, f'{pandizzle_vars_plot_dir}/WarwickPIDVars.pdf')
 
-    ############################################################
+    #############################################################    
     # Pandrizzle variables - Categories + binning match my thesis
-    ############################################################
+    #############################################################
     pandrizzle_vars_plot_dir = f'{args.plot_dir}/IzzleSelection/PandrizzleBDTVars'
-    displacement_PV = Plots.PlotVar('', 'Showers', 'Displacement [cm]', [0, 99], 99)
-    initial_dedx_PV = Plots.PlotVar('', 'Showers', 'Initial dE/dx [MeV/cm]', [-2, 15], 34)
-    dca_PV = Plots.PlotVar('', 'Showers', 'Distance of Closest Approach [cm]', [0, 49], 49)
-    wideness_PV = Plots.PlotVar('', 'Showers', 'Wideness [radians/cm]', [0.0, 0.03], 30)
-    energy_density_PV = Plots.PlotVar('', 'Showers', 'Energy Density [MeV/cm3]', [-1.0, 1.5], 25)
-    shower_eval_ratio_PV =  Plots.PlotVar('', 'Tracks', 'Eigenvalue Ratio', [0.0, 0.8], 20)
-    shower_concentration_PV =  Plots.PlotVar('', 'Tracks', 'Concentration [/cm]', [0, 12], 24)
-    shower_core_halo_PV =  Plots.PlotVar('', 'Tracks', 'Halo-Core Ratio', [0, 10], 20)
-    shower_conicalness_PV =  Plots.PlotVar('', 'Tracks', 'Conicalness [stupid units]', [0, 20], 40)
+    displacement_PV = Plots.VarProperties('', 'Showers', 'Displacement [cm]', [0, 99], 99)
+    initial_dedx_PV = Plots.VarProperties('', 'Showers', 'Initial dE/dx [MeV/cm]', [-2, 15], 34)
+    dca_PV = Plots.VarProperties('', 'Showers', 'Distance of Closest Approach [cm]', [0, 49], 49)
+    wideness_PV = Plots.VarProperties('', 'Showers', 'Wideness [radians/cm]', [0.0, 0.03], 30)
+    energy_density_PV = Plots.VarProperties('', 'Showers', 'Energy Density [MeV/cm3]', [-1.0, 1.5], 25)
+    shower_eval_ratio_PV =  Plots.VarProperties('', 'Tracks', 'Eigenvalue Ratio', [0.0, 0.8], 20)
+    shower_concentration_PV =  Plots.VarProperties('', 'Tracks', 'Concentration [/cm]', [0, 12], 24)
+    shower_core_halo_PV =  Plots.VarProperties('', 'Tracks', 'Halo-Core Ratio', [0, 10], 20)
+    shower_conicalness_PV =  Plots.VarProperties('', 'Tracks', 'Conicalness [stupid units]', [0, 20], 40)
 
     # Target mask
     electron_target_mask = (nusel_branches['RecoPFPTruePrimary'] == 1) & (nusel_branches['RecoPFPIsPrimary'] == 1) & (nusel_branches['RecoPFPTrackShowerScore'] < 0.5) & (nusel_branches['RecoPFPTrackShowerScore'] > 0.0) & completeness_mask & purity_mask & hit_mask
@@ -166,23 +157,23 @@ def main(args) :
     # Pandrizzle Connection Pathway Variables - Categories + binning match my thesis
     ################################################################################
     enhanced_pandrizzle_vars_plot_dir = f'{args.plot_dir}/IzzleSelection/EnhancedPandrizzleBDTVars'
-    largest_gap_PV = Plots.PlotVar('', 'Showers', 'Initial Region Gap Size [cm]', [-1.0, 2.0], 30)
-    initial_gap_PV = Plots.PlotVar('', 'Showers', 'Initial Gap Size [cm]', [-2.0, 4.0], 60)
-    pathway_length_PV = Plots.PlotVar('', 'Showers', 'Pathway Length [cm]', [-2.0, 30.0], 32)
-    pathway_deviation_PV = Plots.PlotVar('', 'Showers', 'Connection Pathway Deviation [cm]', [-2.0, 10.0], 24)
-    shower_n_hits_PV = Plots.PlotVar('', 'Showers', 'Number of Shower Hits', [-2.0, 2000.0], 75)
-    shower_opening_angle_PV = Plots.PlotVar('', 'Showers', 'Opening Angle', [-1.0, 20.0], 42)
-    shower_energy_asymmetry_PV = Plots.PlotVar('', 'Showers', 'Shower Energy Asymmetry', [-0.4, 1.0], 28)
-    moliere_PV = Plots.PlotVar('', 'Showers', 'Moliere Radius', [-2, 10.0], 48)
-    found_hit_ratio_PV = Plots.PlotVar('', 'Showers', 'Found Hit Ratio', [-0.4, 1.5], 19)
-    scatter_angle_PV = Plots.PlotVar('', 'Showers', 'Scatter Angle [degrees]', [-2.0, 30.0], 32)
-    cp_energy_asymmetry_PV = Plots.PlotVar('', 'Showers', 'Connection Pathway Energy Asymmetry', [-0.4, 1.0], 28)
-    cp_energy_weighted_mean_radial_dist_PV = Plots.PlotVar('', 'Showers', 'Connection Pathway Energy Weighted Mean Radial Distance [cm]', [-2.0, 20.0], 44)
-    n_amb_views_PV = Plots.PlotVar('', 'Showers', 'Number of Ambiguous Hit Views', [-2.0, 4.0], 60)
-    amb_hit_energy_PV = Plots.PlotVar('', 'Showers', 'Ambiguous Hit Unaccounted Energy [MeV]', [-10.0, 5.0], 30)
+    largest_gap_PV = Plots.VarProperties('', 'Showers', 'Initial Region Gap Size [cm]', [-1.0, 2.0], 30)
+    initial_gap_PV = Plots.VarProperties('', 'Showers', 'Initial Gap Size [cm]', [-2.0, 4.0], 60)
+    pathway_length_PV = Plots.VarProperties('', 'Showers', 'Pathway Length [cm]', [-2.0, 30.0], 32)
+    pathway_deviation_PV = Plots.VarProperties('', 'Showers', 'Connection Pathway Deviation [cm]', [-2.0, 10.0], 24)
+    shower_n_hits_PV = Plots.VarProperties('', 'Showers', 'Number of Shower Hits', [-2.0, 2000.0], 75)
+    shower_opening_angle_PV = Plots.VarProperties('', 'Showers', 'Opening Angle', [-1.0, 20.0], 42)
+    shower_energy_asymmetry_PV = Plots.VarProperties('', 'Showers', 'Shower Energy Asymmetry', [-0.4, 1.0], 28)
+    moliere_PV = Plots.VarProperties('', 'Showers', 'Moliere Radius', [-2, 10.0], 48)
+    found_hit_ratio_PV = Plots.VarProperties('', 'Showers', 'Found Hit Ratio', [-0.4, 1.5], 19)
+    scatter_angle_PV = Plots.VarProperties('', 'Showers', 'Scatter Angle [degrees]', [-2.0, 30.0], 32)
+    cp_energy_asymmetry_PV = Plots.VarProperties('', 'Showers', 'Connection Pathway Energy Asymmetry', [-0.4, 1.0], 28)
+    cp_energy_weighted_mean_radial_dist_PV = Plots.VarProperties('', 'Showers', 'Connection Pathway Energy Weighted Mean Radial Distance [cm]', [-2.0, 20.0], 44)
+    n_amb_views_PV = Plots.VarProperties('', 'Showers', 'Number of Ambiguous Hit Views', [-2.0, 4.0], 60)
+    amb_hit_energy_PV = Plots.VarProperties('', 'Showers', 'Ambiguous Hit Unaccounted Energy [MeV]', [-10.0, 5.0], 30)
 
     cp_target_mask = (nusel_branches['RecoPFPTruePrimary'] == 1) & (nusel_branches['RecoPFPIsPrimary'] == 1) &\
-        (nusel_branches['RecoPFPTrackShowerScore'] < 0.5) & (nusel_branches['RecoShowerPandrizzlePathwayLengthMin'] > -990) & (nusel_branches['RecoPFPTrackShowerScore'] > 0.0) & completeness_mask & purity_mask & hit_mask
+        (nusel_branches['RecoPFPTrackShowerScore'] < 0.5) & (nusel_branches['RecoShowerPandrizzlePathwayLengthMin'] > 0.0) & (nusel_branches['RecoPFPTrackShowerScore'] > 0.0) & completeness_mask & purity_mask & hit_mask
 
     # Apply to arrays
     true_pdg = ak.to_numpy(ak.flatten(nusel_branches['RecoPFPTruePDG'][cp_target_mask]))
@@ -237,12 +228,12 @@ def main(args) :
     # Backup Pandrizzle Connection Pathway Variables - Categories + binning match my thesis
     #######################################################################################
     backup_pandrizzle_vars_plot_dir = f'{args.plot_dir}/IzzleSelection/BackupPandrizzleBDTVars'
-    modular_pathway_length_PV = Plots.PlotVar('', 'Showers', 'Modular - Pathway Length [cm]', [-2.0, 30.0], 32)
-    modular_cp_energy_weighted_mean_radial_dist_PV = Plots.PlotVar('', 'Showers', 'Modular - Connection Pathway Energy Weighted Mean Radial Distance [cm]', [-2.0, 20.0], 44)
-    modular_shower_n_hits_PV = Plots.PlotVar('', 'Showers', 'Modular - Number of Shower Hits', [-2.0, 2000.0], 75)
+    modular_pathway_length_PV = Plots.VarProperties('', 'Showers', 'Modular - Pathway Length [cm]', [-2.0, 30.0], 32)
+    modular_cp_energy_weighted_mean_radial_dist_PV = Plots.VarProperties('', 'Showers', 'Modular - Connection Pathway Energy Weighted Mean Radial Distance [cm]', [-2.0, 20.0], 44)
+    modular_shower_n_hits_PV = Plots.VarProperties('', 'Showers', 'Modular - Number of Shower Hits', [-2.0, 2000.0], 75)
 
     modular_target_mask = (nusel_branches['RecoPFPTruePrimary'] == 1) & (nusel_branches['RecoPFPIsPrimary'] == 1) &\
-        (nusel_branches['RecoPFPTrackShowerScore'] < 0.5) & (nusel_branches['RecoShowerPandrizzleModularPathwayLength'] > -990) &\
+        (nusel_branches['RecoPFPTrackShowerScore'] < 0.5) & (nusel_branches['RecoShowerPandrizzleModularPathwayLength'] > 0.0) &\
         (nusel_branches['RecoPFPTrackShowerScore'] > 0.0) & completeness_mask & purity_mask & hit_mask
 
     # Apply to arrays
@@ -261,7 +252,6 @@ def main(args) :
     Plots.save_plot(fig, f'{backup_pandrizzle_vars_plot_dir}/ModularShowerVars.pdf')
 
 ##########################################################################################################
-##########################################################################################################
     
 def create_directory_structure(plot_dir) :
     if not os.path.isdir(plot_dir) :
@@ -274,13 +264,11 @@ def create_directory_structure(plot_dir) :
     create_directory(f'{plot_dir}/IzzleSelection', 'BackupPandrizzleBDTVars')
 
 ##########################################################################################################
-##########################################################################################################
     
 def create_directory(root_dir, dir_name) :
     if not os.path.isdir(f'{root_dir}/{dir_name}') :
         os.makedirs(f'{root_dir}/{dir_name}')
 
-##########################################################################################################
 ##########################################################################################################
             
 def parse_cli():
@@ -293,9 +281,9 @@ def parse_cli():
     return parser.parse_args()
 
 ##########################################################################################################
-##########################################################################################################
 
 if __name__ == "__main__":
     args = parse_cli()
     create_directory_structure(args.plot_dir)
     main(args)
+

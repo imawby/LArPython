@@ -1,5 +1,7 @@
 import Definitions
 
+##############################################################################################
+
 class PlotVar :
     def __init__(self, dir_name, tree_name, x_label, y_label, range, n_bins):
         self.dir_name = dir_name
@@ -46,36 +48,39 @@ Event_MCP_plotting_vars = [nu_true_energy, nu_vis_true_energy]
 Event_Reco_plotting_vars = [nu_vertex_accuracy]
 
 # PFP
-completeness = PlotVar('Completeness', 'BM_Completeness', 'Completeness', 'Frac. of MCParticles', [0,1.0], 40)
-purity = PlotVar('Purity', 'BM_Purity', 'Purity', 'Frac. of MCParticles', [0,1.0], 40)
-alt_completeness = PlotVar('AltCompleteness', 'ALT_Completeness', 'AltCompleteness', 'Frac. of MCParticles', [-1.01, 1.0], 40)
-alt_purity = PlotVar('AltPurity', 'ALT_Purity', 'AltPurity', 'Frac. of MCParticles', [-1.01, 1.0], 40)
-n_mc_hits_2d = PlotVar('NMCHits2D', 'MCP_NMCHits2D', 'NMCHits2D', 'Frac. of PFParticles', [0, 1500], 30)
+completeness = PlotVar('Completeness', 'BM_Completeness', 'Completeness', 'Frac. of MCParticles', [0,1.0], 25)
+purity = PlotVar('Purity', 'BM_Purity', 'Purity', 'Frac. of MCParticles', [0,1.0], 25)
+alt_completeness = PlotVar('AltCompleteness', 'ALT_Completeness', 'AltCompleteness', 'Frac. of MCParticles', [-1.01, 1.0], 50)
+alt_purity = PlotVar('AltPurity', 'ALT_Purity', 'AltPurity', 'Frac. of MCParticles', [-1.01, 1.0], 50)
+n_mc_hits_2d = PlotVar('NMCHits2D', 'MCP_NMCHits2D', 'NMCHits2D', 'Frac. of PFParticles', [0, 1500], 150)
 mc_displacement = PlotVar('Displacement', 'MCP_Displacement', 'MC Displacement [cm]', 'Frac. of PFParticles', [0, 100], 10)
-theta_xz = PlotVar('ThetaXZ', 'MCP_TrueThetaXZ', 'ThetaXZ', 'Frac. of PFParticles', [-3.5, 3.5], 25)
-theta_yz = PlotVar('ThetaYZ', 'MCP_TrueThetaYZ', 'ThetaYZ', 'Frac. of PFParticles', [-1.6, 1.6], 12)
-pfo_energy = PlotVar('TrueEnergy', 'MCP_TrueEnergy', 'True Particle Energy', 'Frac. of PFParticles', [0,3], 50)
-true_vis_energy = PlotVar('TrueVisEnergy', 'MCP_TrueVisEnergy', 'True Visible Energy', 'Frac. of PFParticles', [0,2], 20)
+theta_xz = PlotVar('ThetaXZ', 'MCP_TrueThetaXZ', 'ThetaXZ [radians]', 'Frac. of PFParticles', [-3.5, 3.5], 25)
+theta_yz = PlotVar('ThetaYZ', 'MCP_TrueThetaYZ', 'ThetaYZ [radians]', 'Frac. of PFParticles', [-1.6, 1.6], 12)
+pfo_energy = PlotVar('TrueEnergy', 'MCP_TrueEnergy', 'True Particle Energy [GeV]', 'Frac. of PFParticles', [0,3], 50)
+true_vis_energy = PlotVar('TrueVisEnergy', 'MCP_TrueVisEnergy', 'True Visible Energy [GeV]', 'Frac. of PFParticles', [0,1], 50)
 pfo_signed_vertex_acc = PlotVar('VertexAcc', 'BM_VertexAcc', 'Signed Vertex deltaR [cm]', 'Frac. of PFParticles', [-25,25], 25)
+multiplicity = PlotVar('Multiplicity', 'MCNu_Multiplicity', 'N Reco Targets in Event', 'Frac. of PFParticles', [0,50], 50)    
+shower_multiplicity = PlotVar('ShowerMultiplicity', 'MCNu_ShowerMultiplicity', 'N Reco Showers in Event', 'Frac. of PFParticles', [0,20], 20)
+track_multiplicity = PlotVar('TrackMultiplicity', 'MCNu_TrackMultiplicity', 'N Reco Track in Event', 'Frac. of PFParticles', [0,20], 20)
 PFP_MCP_plotting_vars = [completeness, purity, n_mc_hits_2d, true_vis_energy, theta_xz, theta_yz]
 PFP_BM_plotting_vars = [pfo_signed_vertex_acc]
 PFP_ALT_plotting_vars = [alt_completeness, alt_purity]
 PFP_track_shower_plotting_vars = [n_mc_hits_2d, theta_xz, theta_yz]
-PFP_efficiency_vars = [n_mc_hits_2d, theta_xz, theta_yz, true_vis_energy, mc_displacement]
+PFP_efficiency_vars = [n_mc_hits_2d, theta_xz, theta_yz, true_vis_energy, mc_displacement, multiplicity, shower_multiplicity, track_multiplicity]
 
 # Michel
-michel_true_vis_energy = PlotVar('TrueVisEnergy', 'MCP_TrueVisEnergy', 'True Visible Energy', 'Frac. of Michels', [0,0.1], 20)
-michel_n_mc_hits_2d = PlotVar('NMCHits2D', 'MCP_NMCHits2D', 'Michel NMCHits2D', 'Frac. of Michels', [Definitions.MIN_TOTAL_HITS, 150], 15)
-michel_completeness = PlotVar('Completeness', 'BM_Completeness', 'Completeness', 'Frac. of Michels', [0,1.0], 20)
-michel_purity = PlotVar('Purity', 'BM_Purity', 'Purity', 'Frac. of Michels', [0,1.0], 20)
+michel_true_vis_energy = PlotVar('TrueVisEnergy', 'MCP_TrueVisEnergy', 'True Visible Energy [GeV]', 'Frac. of Michels', [0,0.06], 24)
+michel_n_mc_hits_2d = PlotVar('NMCHits2D', 'MCP_NMCHits2D', 'Michel NMCHits2D', 'Frac. of Michels', [Definitions.MIN_TOTAL_HITS, 110], 15)
+michel_completeness = PlotVar('Completeness', 'BM_Completeness', 'Completeness', 'Frac. of Michels', [0,1.0], 25)
+michel_purity = PlotVar('Purity', 'BM_Purity', 'Purity', 'Frac. of Michels', [0,1.0], 25)
 Michel_MCP_plotting_vars = [michel_n_mc_hits_2d, michel_completeness, michel_purity, michel_true_vis_energy]
 Michel_track_shower_vars = [michel_n_mc_hits_2d]
 Michel_efficiency_vars = [michel_n_mc_hits_2d, michel_true_vis_energy]
 
 # Track
 track_endpoint_n_mc_hits = PlotVar('EndpointNMCHits', 'MCP_EndpointsMCHits', 'Endpoint nMCHits', 'Frac. of PFParticles', [0,50], 20)
-track_endpoint_completeness = PlotVar('EndpointCompleteness', 'BM_EndpointCompleteness', 'Endpoint Completeness', 'Frac. of PFParticles', [-1.5,1.0], 50)
-track_endpoint_purity = PlotVar('EndpointPurity', 'BM_EndpointPurity', 'EndpointPurity', 'Frac. of PFParticles', [-1.5,1.0], 50)
+track_endpoint_completeness = PlotVar('EndpointCompleteness', 'BM_EndpointCompleteness', 'Endpoint Completeness', 'Frac. of PFParticles', [-1.0001,1.0], 50)
+track_endpoint_purity = PlotVar('EndpointPurity', 'BM_EndpointPurity', 'Endpoint Purity', 'Frac. of PFParticles', [-1.0001,1.0], 50)
 track_signed_endpoint_acc = PlotVar('EndpointAcc', 'BM_EndpointAcc', 'Signed Endpoint deltaR [cm]', 'Frac. of PFParticles', [-25,25], 25)
 Track_MCP_plotting_vars = [track_endpoint_completeness, track_endpoint_purity, track_endpoint_n_mc_hits]
 Track_BM_plotting_vars = [track_signed_endpoint_acc]
@@ -83,10 +88,10 @@ Track_BM_plotting_vars = [track_signed_endpoint_acc]
 # Shower
 shower_initial_MC_hits = PlotVar('InitialMCHits2D', 'MCP_InitialMCHits', 'Initial # MC 2D Hits', 'Frac. of True Showers', [0,150], 30)
 shower_initial_PFP_hits = PlotVar('InitialPfoHits2D', 'BM_InitialPfoHits', 'Initial # Pfo 2D Hits', 'Frac. of True Showers', [0,150], 30) # -1 == no MC hits in initial region
-shower_initial_completeness = PlotVar('InitialCompleteness', 'BM_InitialCompleteness', 'Initial Completeness', 'Frac. of True Showers', [-1.05,1.0], 20) # -1 == no MC hits in initial region
-shower_initial_purity = PlotVar('InitialPurity', 'BM_InitialPurity', 'Initial Purity', 'Frac. of True Showers', [-1.05,1.0], 20)                   
-shower_dir_acc = PlotVar('InitialDirAccuracy', 'BM_DirAcc', 'True-Reco Dir Opening Angle [radians]', 'Frac. of Reco Showers', [-1.1, 3.2], 50)  
-shower_moliere = PlotVar('MoliereRadius', 'BM_MoliereRadius', 'Moliere Radius', 'Frac. of Reco Showers', [-1.0, 20], 22)  
+shower_initial_completeness = PlotVar('InitialCompleteness', 'BM_InitialCompleteness', 'Initial Completeness', 'Frac. of True Showers', [-1.0001,1.0], 50) # -1 == no MC hits in initial region
+shower_initial_purity = PlotVar('InitialPurity', 'BM_InitialPurity', 'Initial Purity', 'Frac. of True Showers', [-1.0001,1.0], 50)                   
+shower_dir_acc = PlotVar('InitialDirAccuracy', 'BM_DirAcc', 'True-Reco Dir Opening Angle [radians]', 'Frac. of Reco Showers', [-1.001, 3.2], 50)  
+shower_moliere = PlotVar('MoliereRadius', 'BM_MoliereRadius', 'Moliere Radius [cm]', 'Frac. of Reco Showers', [-1.0001, 20], 42)  
 Shower_MCP_plotting_vars = [shower_initial_MC_hits, shower_initial_PFP_hits, shower_initial_completeness, shower_initial_purity]
 Shower_BM_plotting_vars = [shower_dir_acc, shower_moliere]
 
@@ -137,3 +142,4 @@ PFP_profile_vars = [pfp_completeness_true_vis_energy, pfp_completeness_n_mc_hits
 # PFP
 completeness_purity_var = TwoVar('Completeness_Purity', completeness, purity)
 PFP_2D_vars = [completeness_purity_var]
+

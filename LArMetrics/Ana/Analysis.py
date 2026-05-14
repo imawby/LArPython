@@ -1,4 +1,3 @@
-# Imports
 import argparse
 import numpy as np
 import uproot
@@ -12,7 +11,6 @@ import Plots
 import Definitions
 
 ##########################################################################################################
-##########################################################################################################
     
 def ConvertMuonMomToEnergy(muon_mom_array) :
     muon_mass = 0.1056583745
@@ -21,39 +19,37 @@ def ConvertMuonMomToEnergy(muon_mom_array) :
     return jam
 
 ##########################################################################################################
-##########################################################################################################
 
 def main(args) :
 
-    #########################
-    # Handle file
-    #########################
+    # Detector
+    detector_config = Definitions.DetectorConfig(Definitions.dune_hd_fd_energy_corr, Definitions.dune_hd_fd_fv, Definitions.dune_hd_fd_cvn, Definitions.dune_hd_fd_izzle, Definitions.dune_hd_fd_ivysaurus) if args.detector == "hd_fd" else None
+
+    if detector_config is None:
+        raise NotImplementedError("other detector types not configured")
+    
     file_name = f'{args.input_file}'
-    file = uproot.open(file_name)
+    with uproot.open(file_name) as file:
+        tree = file['ccnuselection/ccnusel']
+        nusel_branches = tree.arrays(['Run', 'SubRun', 'Event', 'BeamPdg', 'NuPdg', 'NC', 'TargetZ', 
+                                      'NuX', 'NuY', 'NuZ', 'Enu', 'OscProb',
+                                      'NumuRecoENu', 'NumuRecoMomLep', 'NumuRecoEHad', 'NueRecoENu', 'NueRecoEHad', 'RecoTrackRecoContained',
+                                      'RecoNuVtxX', 'RecoNuVtxY', 'RecoNuVtxZ',
+                                      'CVNResultNue', 'CVNResultNumu',
+                                      'RecoPFPTruePDG', 'RecoPFPTrackShowerScore', 'RecoPFPRecoNHits',
+                                      'RecoTrackPandizzleVar', 'SelTrackPandizzleIndex',
+                                      'SelPandizzleTrackContained', 'SelPandizzleTrackRecoMom', 'SelPandizzleTrackNumuEnu', 'SelPandizzleTrackNumuEHad',
+                                      'SelIvysaurusTrackContained', 'SelIvysaurusTrackRecoMom', 'SelIvysaurusTrackNumuEnu', 'SelIvysaurusTrackNumuEHad',
+                                      'SelShowerEnhancedPandrizzleScore', 'SelShowerBackupPandrizzleScore',
+                                      'SelPandrizzleShowerNueEnu', 'SelPandrizzleShowerNueEHad', 'SelShowerPandrizzleIndex',
+                                      'SelTrackPandizzleScore', 'SelTrackIvysaurusScore', 'SelShowerIvysaurusScore', 'SelShowerIvysaurusIndex',
+                                      'SelIvysaurusShowerNueEnu', 'SelIvysaurusShowerNueEHad',
+                                      'RecoShowerEnhancedPandrizzleScore', 'RecoShowerBackupPandrizzleScore', 'SelShowerPandrizzleIndex', 
+                                      'ProjectedPOTWeight'], library='ak')
 
-    #########################
-    # Get branches
-    #########################
-    tree = file['ccnuselection/ccnusel']
-    nusel_branches = tree.arrays(['Run', 'SubRun', 'Event', 'BeamPdg', 'NuPdg', 'NC', 'TargetZ', 
-                                  'NuX', 'NuY', 'NuZ', 'Enu', 'OscProb',
-                                  'NumuRecoENu', 'NumuRecoMomLep', 'NumuRecoEHad', 'NueRecoENu', 'NueRecoEHad', 'RecoTrackRecoContained',
-                                  'RecoNuVtxX', 'RecoNuVtxY', 'RecoNuVtxZ',
-                                  'CVNResultNue', 'CVNResultNumu',
-                                  'RecoPFPTruePDG', 'RecoPFPTrackShowerScore', 'RecoPFPRecoNHits',
-                                  'RecoTrackPandizzleVar', 'SelTrackPandizzleIndex',
-                                  'SelPandizzleTrackContained', 'SelPandizzleTrackRecoMom', 'SelPandizzleTrackNumuEnu', 'SelPandizzleTrackNumuEHad',
-                                  'SelIvysaurusTrackContained', 'SelIvysaurusTrackRecoMom', 'SelIvysaurusTrackNumuEnu', 'SelIvysaurusTrackNumuEHad',
-                                  'SelShowerEnhancedPandrizzleScore', 'SelShowerBackupPandrizzleScore',
-                                  'SelPandrizzleShowerNueEnu', 'SelPandrizzleShowerNueEHad', 'SelShowerPandrizzleIndex',
-                                  'SelTrackPandizzleScore', 'SelTrackIvysaurusScore', 'SelShowerIvysaurusScore', 'SelShowerIvysaurusIndex',
-                                  'SelIvysaurusShowerNueEnu', 'SelIvysaurusShowerNueEHad',
-                                  'RecoShowerEnhancedPandrizzleScore', 'RecoShowerBackupPandrizzleScore', 'SelShowerPandrizzleIndex', 
-                                  'ProjectedPOTWeight'], library='ak')
-
-    ##################################
+    ##################################        
     # Add selected PFP nHits2D to tree
-    ##################################
+    ##################################    
     for pid_string in ['Pandrizzle', 'Ivysaurus'] :
         idx = nusel_branches[f'SelShower{pid_string}Index']
         idx = idx[:, None]   # ← this is the "unsqueeze"
@@ -69,13 +65,13 @@ def main(args) :
             f'SelShower{pid_string}NHits'
         )
 
-    ##############################
+    ##########################
     # Correct reco nue energy
-    ##############################
-    IntShwEnergy = Definitions.IntShwEnergy_HD if args.is_hd else Definitions.IntShwEnergy_VD
-    GradShwEnergy = Definitions.GradShwEnergy_HD if args.is_hd else Definitions.GradShwEnergy_VD
-    IntNuEHadEn = Definitions.IntNuEHadEn_HD if args.is_hd else Definitions.IntNuEHadEn_VD
-    GradNuEHadEn = Definitions.GradNuEHadEn_HD if args.is_hd else Definitions.GradNuEHadEn_VD
+    ##########################
+    IntShwEnergy = detector_config.energy_corr["IntShwEnergy"]
+    GradShwEnergy = detector_config.energy_corr["GradShwEnergy"]
+    IntNuEHadEn = detector_config.energy_corr["IntNuEHadEn"]
+    GradNuEHadEn = detector_config.energy_corr["GradNuEHadEn"]
 
     for pid_string in ['Pandrizzle', 'Ivysaurus'] :
         enu_string = f'Sel{pid_string}ShowerNueEnu'
@@ -96,18 +92,17 @@ def main(args) :
             f'Corrected{pid_string}NueRecoE'
         )
 
-    IntTrkMomRange = Definitions.IntTrkMomRange_HD if args.is_hd else Definitions.IntTrkMomRange_VD
-    GradTrkMomRange = Definitions.GradTrkMomRange_HD if args.is_hd else Definitions.GradTrkMomRange_VD
-    IntTrkMomMCS = Definitions.IntTrkMomMCS_HD if args.is_hd else Definitions.IntTrkMomMCS_VD
-    GradTrkMomMCS = Definitions.GradTrkMomMCS_HD if args.is_hd else Definitions.GradTrkMomMCS_VD
-    IntNuMuHadEnCont = Definitions.IntNuMuHadEnCont_HD if args.is_hd else Definitions.IntNuMuHadEnCont_VD
-    GradNuMuHadEnCont = Definitions.GradNuMuHadEnCont_HD if args.is_hd else Definitions.GradNuMuHadEnCont_VD
-    IntNuMuHadEnExit = Definitions.IntNuMuHadEnExit_HD if args.is_hd else Definitions.IntNuMuHadEnExit_VD
-    GradNuMuHadEnExit = Definitions.GradNuMuHadEnExit_HD if args.is_hd else Definitions.GradNuMuHadEnExit_VD
-
     ##############################
     # Correct reco numu energy
-    ##############################
+    ##############################        
+    IntTrkMomRange = detector_config.energy_corr["IntTrkMomRange"]
+    GradTrkMomRange = detector_config.energy_corr["GradTrkMomRange"]
+    IntTrkMomMCS = detector_config.energy_corr["IntTrkMomMCS"]
+    GradTrkMomMCS = detector_config.energy_corr["GradTrkMomMCS"]
+    IntNuMuHadEnCont = detector_config.energy_corr["IntNuMuHadEnCont"]
+    GradNuMuHadEnCont = detector_config.energy_corr["GradNuMuHadEnCont"]
+    IntNuMuHadEnExit = detector_config.energy_corr["IntNuMuHadEnExit"]
+    GradNuMuHadEnExit = detector_config.energy_corr["GradNuMuHadEnExit"]
 
     for pid_string in ['Pandizzle', 'Ivysaurus'] :
         enu_string = f'Sel{pid_string}TrackNumuEnu'
@@ -118,17 +113,17 @@ def main(args) :
         # Correct muon
         numu_muon_mom_corrected = nusel_branches[mom_string]
         numu_muon_mom_corrected = ak.where(nusel_branches[contained_string] == 1, (numu_muon_mom_corrected - IntTrkMomRange) / GradTrkMomRange , numu_muon_mom_corrected) #contained
-        numu_muon_mom_corrected = ak.where(nusel_branches[contained_string] == 0, (numu_muon_mom_corrected - IntTrkMomMCS) / GradTrkMomMCS , numu_muon_mom_corrected)    #uncontained
-        numu_muon_mom_corrected = ak.where(nusel_branches[enu_string] < -990, -999.0, numu_muon_mom_corrected)
+        numu_muon_mom_corrected = ak.where(nusel_branches[contained_string] == 0, (numu_muon_mom_corrected - IntTrkMomMCS) / GradTrkMomMCS , numu_muon_mom_corrected)     #uncontained
+        numu_muon_mom_corrected = ak.where(nusel_branches[enu_string] < 0.0, -999.0, numu_muon_mom_corrected)
         numu_muon_corrected = ConvertMuonMomToEnergy(numu_muon_mom_corrected)
         # Correct hadron
         numu_had_corrected = nusel_branches[ehad_string]
         numu_had_corrected = ak.where(nusel_branches[contained_string] == 1, (numu_had_corrected - IntNuMuHadEnCont) / GradNuMuHadEnCont , numu_had_corrected)  #contained
-        numu_had_corrected = ak.where(nusel_branches[contained_string] == 0, (numu_had_corrected - IntNuMuHadEnExit) / GradNuMuHadEnExit , numu_had_corrected) #uncontained
-        numu_had_corrected = ak.where(nusel_branches[enu_string] < -990, -999.0, numu_had_corrected)
+        numu_had_corrected = ak.where(nusel_branches[contained_string] == 0, (numu_had_corrected - IntNuMuHadEnExit) / GradNuMuHadEnExit , numu_had_corrected)  #uncontained
+        numu_had_corrected = ak.where(nusel_branches[enu_string] < 0.0, -999.0, numu_had_corrected)
         # Add
         numu_corrected = numu_muon_corrected + numu_had_corrected
-        numu_corrected = ak.where(nusel_branches[enu_string] < -990, -999.0, numu_corrected)
+        numu_corrected = ak.where(nusel_branches[enu_string] < 0.0, -999.0, numu_corrected)
 
         nusel_branches = ak.with_field(
             nusel_branches,
@@ -140,18 +135,17 @@ def main(args) :
     # Identify signal
     ##############################
     # CCnue
-    signal_CC_nue_flav_mask = Signal.IsCCNueFlavourSignal(nusel_branches)
-    outoffv_CC_nue_flav_mask = Signal.IsCCNueFlavourOutOfFV(nusel_branches)
+    signal_CC_nue_flav_mask = Signal.IsCCNueFlavourSignal(nusel_branches, detector_config.fv)
+    outoffv_CC_nue_flav_mask = Signal.IsCCNueFlavourOutOfFV(nusel_branches, detector_config.fv)
     # CCnumu
-    signal_CC_numu_flav_mask = Signal.IsCCNumuFlavourSignal(nusel_branches)
-    outoffv_CC_numu_flav_mask = Signal.IsCCNumuFlavourOutOfFV(nusel_branches)
+    signal_CC_numu_flav_mask = Signal.IsCCNumuFlavourSignal(nusel_branches, detector_config.fv)
+    outoffv_CC_numu_flav_mask = Signal.IsCCNumuFlavourOutOfFV(nusel_branches, detector_config.fv)
     # CCnutau
     CC_nutau_flav_mask = Signal.IsCCNutauFlavour(nusel_branches)
     # NC
     NC_mask = Signal.IsNC(nusel_branches)
     # Other
     other_mask = (~signal_CC_nue_flav_mask) & (~outoffv_CC_nue_flav_mask) & (~signal_CC_numu_flav_mask) & (~outoffv_CC_numu_flav_mask) & (~CC_nutau_flav_mask) & (~NC_mask)
-
     # Class masks (see Plots.py)
     class_masks = [signal_CC_nue_flav_mask, outoffv_CC_nue_flav_mask, signal_CC_numu_flav_mask, outoffv_CC_numu_flav_mask, CC_nutau_flav_mask, NC_mask, other_mask]
 
@@ -171,8 +165,8 @@ def main(args) :
     ##############################
     # Plot CVN selection
     ##############################
-    cvn_sel_CC_nue_mask = Selection.PassCCNueSelection_CVN(nusel_branches)
-    cvn_sel_CC_numu_mask = Selection.PassCCNumuSelection_CVN(nusel_branches)
+    cvn_sel_CC_nue_mask = Selection.PassCCNueSelection_CVN(nusel_branches, detector_config)
+    cvn_sel_CC_numu_mask = Selection.PassCCNumuSelection_CVN(nusel_branches, detector_config)
 
     cvn_plot_dir = f'{args.plot_dir}/CVNSelection/'
     
@@ -189,8 +183,8 @@ def main(args) :
     #####################################
     # Plot pandizzle/pandrizzle selection
     #####################################
-    izzle_sel_CC_nue_mask = Selection.PassCCNuePandrizzleSelection(nusel_branches)
-    izzle_sel_CC_numu_mask = Selection.PassCCNumuPandizzleSelection(nusel_branches)
+    izzle_sel_CC_nue_mask = Selection.PassCCNueSelection_Izzle(nusel_branches, detector_config)
+    izzle_sel_CC_numu_mask = Selection.PassCCNumuSelection_Izzle(nusel_branches, detector_config)
 
     izzle_plot_dir = f'{args.plot_dir}/IzzleSelection/'
 
@@ -212,8 +206,8 @@ def main(args) :
     #####################################
     # Plot ivysaurus selection
     #####################################
-    ivy_sel_CC_nue_mask = Selection.PassCCNueIvysaurusSelection(nusel_branches, 0.9)
-    ivy_sel_CC_numu_mask = Selection.PassCCNumuIvysaurusSelection(nusel_branches)
+    ivy_sel_CC_nue_mask = Selection.PassCCNueSelection_Ivysaurus(nusel_branches, detector_config, 0.9)
+    ivy_sel_CC_numu_mask = Selection.PassCCNumuSelection_Ivysaurus(nusel_branches, detector_config)
 
     ivysaurus_plot_dir = f'{args.plot_dir}/IvysaurusSelection/'
     
@@ -233,7 +227,6 @@ def main(args) :
     Plots.save_plot(fig, f'{ivysaurus_plot_dir}/IvysaurusSelection_Metrics.pdf')
 
 ##########################################################################################################
-##########################################################################################################
     
 def create_directory_structure(plot_dir) :
     if not os.path.isdir(plot_dir) :
@@ -245,27 +238,24 @@ def create_directory_structure(plot_dir) :
     create_directory(plot_dir, 'IvysaurusSelection')
 
 ##########################################################################################################
-##########################################################################################################
     
 def create_directory(root_dir, dir_name) :
     if not os.path.isdir(f'{root_dir}/{dir_name}') :
         os.makedirs(f'{root_dir}/{dir_name}')
 
 ##########################################################################################################
-##########################################################################################################
             
 def parse_cli():
-    # Set up argument parser
     parser = argparse.ArgumentParser(description="Validation script for Pandora.")
     parser.add_argument("--plot_dir", type=str, required=True, help="Directory for storing plots.")
     parser.add_argument("--input_file", type=str, required=True, help="Path to the input file.")
-    parser.add_argument("--is_hd", type=str, required=True, help="If HD (True) or VD (False) file.")
+    parser.add_argument("--detector", type=str, required=True, help="hd_fd, hd_vd, sbnd, icarus")
     return parser.parse_args()
 
-##########################################################################################################
 ##########################################################################################################
 
 if __name__ == "__main__":
     args = parse_cli()
     create_directory_structure(args.plot_dir)
     main(args)
+

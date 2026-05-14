@@ -5,11 +5,10 @@ import Definitions
 import Variables
 import ValidationFunc
 
-#####################################################################################################################################################
 ####################################################################################################################################################
 
 def run_pfp_validation(plot_dir_path, config_target_mask, config_reco_mask, int_masks, tier_masks, pdg_masks, pfp_branches) :
-
+    print('Running PFP Validation...')
     for tier in Definitions.tiers :     
         tier_mask = tier_masks[tier]
     
@@ -58,8 +57,7 @@ def run_pfp_validation(plot_dir_path, config_target_mask, config_reco_mask, int_
                     ValidationFunc.create_plots({'target' : target_mask}, pfp_branches, ValidationFunc.PlotVariable, Variables.PFP_ALT_plotting_vars, f'{plot_dir_path}/Alt', plot_config)
 
                     # Segment alt vars
-                    ValidationFunc.segment_plot_vars({'target' : target_mask}, pfp_branches, ValidationFunc.SegmentAltVar, Variables.PFP_ALT_plotting_vars, Variables.ALT_seg_vars,
-                                                     f'{plot_dir_path}/Alt', plot_config)
+                    ValidationFunc.segment_plot_vars({'target' : target_mask}, pfp_branches, ValidationFunc.SegmentAltVar, Variables.PFP_ALT_plotting_vars, Variables.ALT_seg_vars, f'{plot_dir_path}/Alt', plot_config)
 
                     # Plot efficiency
                     ValidationFunc.create_plots({'target' : target_mask, 'reco' : reco_mask}, pfp_branches, ValidationFunc.PlotEfficiency, Variables.PFP_efficiency_vars, f'{plot_dir_path}/Efficiency', plot_config)
@@ -82,6 +80,10 @@ def TrackShowerClassification(reco_mask, pdg_masks, pfp_branches, fig, ax, int_t
     conf_matrix_eff = []
 
     for pdg in Definitions.pdgs :
+
+        if (pdg == 0) :
+            continue
+        
         # Only look at those that have been reconstructed
         target_mask = pdg_masks[pdg] & reco_mask
         n_particle = ak.sum(target_mask)
@@ -91,20 +93,19 @@ def TrackShowerClassification(reco_mask, pdg_masks, pfp_branches, fig, ax, int_t
         
     conf_matrix_eff = np.array(conf_matrix_eff)
     im = ax.imshow(conf_matrix_eff, cmap='Blues')
-    # Axis ticks
     ax.set_xticks([0, 1])
     ax.set_xticklabels(["Track", "Shower"])
-    ax.set_yticks(range(len(Definitions.pdgs)))
-    ax.set_yticklabels([str(p) for p in Definitions.pdgs])
-    # Axis labels and title
+    ax.set_yticks(range(len(Definitions.pdgs) - 1))
+    ax.set_yticklabels([str(Definitions.pdg_strings[p]) for p in Definitions.pdgs if p != 0])
     ax.set_xlabel("Reco Classification")
     ax.set_ylabel("True PDG")
     ax.set_title(f'{Definitions.int_strings[int_type]}: {Definitions.tier_strings[tier]}')    
-    
-    # Add text inside cells
+
     for i in range(conf_matrix_eff.shape[0]):
         for j in range(conf_matrix_eff.shape[1]):
             ax.text(j, i, conf_matrix_eff[i, j],
                     ha="center", va="center", color=("white" if conf_matrix_eff[i, j] > 0.5 else "black"))
     
     plt.tight_layout()
+    return {'empty': np.array([0,0])}
+

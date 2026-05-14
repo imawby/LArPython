@@ -3,8 +3,8 @@ import numpy as np
 from scipy.stats import binned_statistic
 import matplotlib.pyplot as plt
 import Definitions
+import pickle
 
-##############################################################################################
 ##############################################################################################
     
 class PlotConfig :
@@ -16,10 +16,8 @@ class PlotConfig :
         self.color = color
 
 ##############################################################################################
-##############################################################################################
 
 def configure_plot(fig, ax, int_string="", tier_string="", pdg_string="") :
-
     title = '       '
     if (int_string) :
         title += int_string
@@ -33,33 +31,29 @@ def configure_plot(fig, ax, int_string="", tier_string="", pdg_string="") :
     fig.subplots_adjust(left=0.08, right=0.98, bottom=0.10, top=0.95, hspace=0.4, wspace=0.4)
 
 ##############################################################################################
-##############################################################################################
 
-def save_plot(fig, path) :
+def save_plot(fig, path, file_data) :
     plt.close(fig)      
-    fig.savefig(path, bbox_inches='tight')
+    fig.savefig(f'{path}.pdf', bbox_inches='tight')
+    np.savez(f'{path}.npz', **file_data)
 
-##############################################################################################
 ##############################################################################################    
 
 def create_plots(masks, branches, plot_func, plot_vars, sub_dir, plot_config) :
     for plot_var in plot_vars :
         fig, ax = plt.subplots()
-        configure_plot(fig, ax, int_string=plot_config.int_string, pdg_string=plot_config.pdg_string)
+        configure_plot(fig, ax, int_string=plot_config.int_string, tier_string=plot_config.tier_string, pdg_string=plot_config.pdg_string)
         
         if len(masks) == 1 :
-            plot_func(next(iter(masks.values())), branches, plot_var, ax, plot_config.pdg_string, plot_config.color)
+            file_data = plot_func(next(iter(masks.values())), branches, plot_var, ax, plot_config.pdg_string, plot_config.color)
         else :
-            plot_func(masks['target'], masks['reco'], branches, plot_var, ax, plot_config.pdg_string, plot_config.color)
+            file_data = plot_func(masks['target'], masks['reco'], branches, plot_var, ax, plot_config.pdg_string, plot_config.color)
             
-        save_plot(fig, f'{sub_dir}/{plot_var.dir_name}/{plot_config.file_name}.pdf')
+        save_plot(fig, f'{sub_dir}/{plot_var.dir_name}/{plot_config.file_name}', file_data)
 
-
-##############################################################################################
 ##############################################################################################    
 
 def segment_plot_vars(masks, branches, plot_func, plot_vars, seg_vars, sub_dir, plot_config) :
-
     for plot_var in plot_vars :
         for seg_var in seg_vars :
             fig, ax = plt.subplots()
@@ -68,13 +62,12 @@ def segment_plot_vars(masks, branches, plot_func, plot_vars, seg_vars, sub_dir, 
             if len(masks) == 1 :
                 plot_func(next(iter(masks.values())), branches, plot_var, seg_var, ax)
 
-            save_plot(fig, f'{sub_dir}/{plot_var.dir_name}_Seg/{seg_var.dir_name}/{plot_config.file_name}.pdf')
+            file_data = {'empty': np.array([0,0])}
+            save_plot(fig, f'{sub_dir}/{plot_var.dir_name}_Seg/{seg_var.dir_name}/{plot_config.file_name}', file_data)
 
-#####################################################################################################################################################
-#####################################################################################################################################################
+##############################################################################################            
 
 def SegmentAltVar(target_mask, pfp_branches, plot_var, seg_var, ax):
-
     n_entries = ak.count_nonzero(target_mask)
     
     for index in range(len(seg_var.options)) :
@@ -82,10 +75,8 @@ def SegmentAltVar(target_mask, pfp_branches, plot_var, seg_var, ax):
         PlotVariable(mask, pfp_branches, plot_var, ax, f'{seg_var.options[index]}', seg_var.colors[index], fill=False, n_entries=n_entries)
 
 ##############################################################################################
-##############################################################################################
 
 def TrackShowerAsAFunctionOf(pfp_indices, pfp_branches, plot_var, ax, legend_string, color) :
-    
     n_hits = ak.to_numpy(ak.flatten(pfp_branches[plot_var.tree_name][pfp_indices]))
     is_track = ak.to_numpy(ak.flatten(pfp_branches['BM_IsTrack'][pfp_indices]))
     is_shower = ak.to_numpy(ak.flatten(pfp_branches['BM_IsShower'][pfp_indices]))
@@ -106,8 +97,9 @@ def TrackShowerAsAFunctionOf(pfp_indices, pfp_branches, plot_var, ax, legend_str
     ax.set_xlabel(plot_var.x_label)
     ax.set_ylabel(plot_var.y_label)    
     ax.legend(loc='center right')
+
+    return {'empty': np.array([0,0])}
     
-##############################################################################################
 ##############################################################################################
 
 def PlotVariable(indices_or_mask, branches, plot_var, ax, label, color, fill=True, n_entries=0):
@@ -123,9 +115,7 @@ def PlotVariable(indices_or_mask, branches, plot_var, ax, label, color, fill=Tru
         if (n_entries == 0) :
             return
     
-    hist_counts, bin_edges = np.histogram(
-        target_entries, bins=plot_var.n_bins, range=plot_var.range
-    )
+    hist_counts, bin_edges = np.histogram(target_entries, bins=plot_var.n_bins, range=plot_var.range)
     hist_fraction = hist_counts / n_entries
     
     # Plot with error == sqrt(n_i)/N
@@ -133,15 +123,15 @@ def PlotVariable(indices_or_mask, branches, plot_var, ax, label, color, fill=Tru
     bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])    
     ax.step(bin_centers, hist_fraction, where='mid', color=color, linewidth=1, label=f'{label}')
     if (fill) :
-        ax.fill_between(bin_centers,hist_fraction,step='mid',color=color,alpha=0.3)
+        ax.fill_between(bin_centers,hist_fraction,step='mid',color=color, alpha=0.3)
     ax.errorbar(bin_centers, hist_fraction, yerr=hist_error, fmt='none', ecolor=color, capsize=2)
 
     ax.set_xlabel(plot_var.x_label)
     ax.set_ylabel(plot_var.y_label)
 
-    return [hist_fraction, hist_error, bin_edges]
+    return {'dist_x' : bin_centers, 'dist_y' : hist_fraction, 'dist_y_err' : hist_error, 'dist_x_label' : plot_var.x_label,
+            'dist_y_label' : plot_var.y_label, 'dist_color' : color}
 
-##############################################################################################
 ##############################################################################################
 
 def Plot2DHist(indices_or_mask, branches, two_plot_var, ax, label, color) :
@@ -174,13 +164,8 @@ def Plot2DHist(indices_or_mask, branches, two_plot_var, ax, label, color) :
     
     hist_fraction = hist_counts / n_entries
 
-    # Plot as colored mesh
-    mesh = ax.pcolormesh(
-        x_edges,
-        y_edges,
-        hist_fraction.T,   # transpose needed for correct orientation
-        cmap='Blues'
-    )
+    # Plot as colored mesh, transpose needed for correct orientation
+    mesh = ax.pcolormesh(x_edges, y_edges, hist_fraction.T, cmap='Blues')
     mesh.set_clim(0.0, 0.1) 
     cbar = plt.colorbar(mesh, ax=ax)
     cbar.set_label(plot_var_x.y_label)
@@ -192,7 +177,6 @@ def Plot2DHist(indices_or_mask, branches, two_plot_var, ax, label, color) :
         for j in range(len(y_edges) - 1):
             value = hist_fraction[i, j]
     
-            # Optional: skip empty bins
             if hist_counts[i, j] == 0:
                 continue
     
@@ -202,18 +186,10 @@ def Plot2DHist(indices_or_mask, branches, two_plot_var, ax, label, color) :
     
             # Choose text color based on value for readability
             color = 'white' if value > 0.05 else 'black'
-    
-            ax.text(
-                x_center,
-                y_center,
-                f"{value:.3f}",   # format (3 decimal places)
-                ha='center',
-                va='center',
-                fontsize=8,
-                color=color
-            )   
+            ax.text(x_center, y_center, f"{value:.3f}", ha='center', va='center', fontsize=8, color=color)
 
-##############################################################################################
+    return {'empty': np.array([0,0])}
+
 ##############################################################################################
 
 def PlotProfileX(indices_or_mask, branches, profile_var, ax, label, color):
@@ -254,15 +230,18 @@ def PlotProfileX(indices_or_mask, branches, profile_var, ax, label, color):
     ax.set_xlabel(profile_var.plot_var_x.x_label)
     ax.set_ylim(profile_var.plot_var_y.range)
     ax.grid(True)
+
+    plot_data = {'profile_x' : x_centers[valid], 'profile_y' : mean_y[valid], 'profile_y_err' : sem_y[valid]}
     
     # Add in underlying distribution 
     ax2 = ax.twinx()
-    PlotVariable(indices_or_mask, branches, profile_var.plot_var_x, ax2, 'Dist', color)
+    dist_data = PlotVariable(indices_or_mask, branches, profile_var.plot_var_x, ax2, 'Dist', color)
     ax2.set_ylabel(profile_var.plot_var_x.y_label, color=color)
     ax2.tick_params(axis='y', colors=color)
     ax2.spines['right'].set_color(color)
+
+    return {**plot_data, **dist_data} 
         
-##############################################################################################
 ##############################################################################################
 
 def PlotDiffVariable(indices_or_mask, branches, plot_diff_var, ax, label, color) :
@@ -282,13 +261,12 @@ def PlotDiffVariable(indices_or_mask, branches, plot_diff_var, ax, label, color)
     ax.set_xlabel(plot_diff_var.x_label)
     ax.set_ylabel(plot_diff_var.y_label)
     ax.hist(target_entries, bins=plot_diff_var.n_bins, range=plot_diff_var.range, weights=weights, histtype='step', color=color, linewidth=1, label=(f' {label} '))
-    ax.legend()
 
-##############################################################################################
+    return {'empty': np.array([0,0])}
+
 ##############################################################################################
 
 def PlotEfficiency(target_mask_or_indices, reco_mask_or_indices, pfp_branches, plot_var, ax, legend_string, color) :
-    
     target_entries = ak.to_numpy(ak.flatten(pfp_branches[plot_var.tree_name][target_mask_or_indices]))
     reco_entries = ak.to_numpy(ak.flatten(pfp_branches[plot_var.tree_name][reco_mask_or_indices]))
     
@@ -301,9 +279,7 @@ def PlotEfficiency(target_mask_or_indices, reco_mask_or_indices, pfp_branches, p
     # Binomial efficiency uncertainty
     efficiency_err = np.zeros_like(efficiency)
     valid = hist_target > 0
-    efficiency_err[valid] = np.sqrt(
-        efficiency[valid] * (1.0 - efficiency[valid]) / hist_target[valid]
-    )
+    efficiency_err[valid] = np.sqrt(efficiency[valid] * (1.0 - efficiency[valid]) / hist_target[valid])
 
     bin_centers = 0.5 * (edges[1:] + edges[:-1])
     ax.errorbar(bin_centers, efficiency, yerr=efficiency_err, fmt='x-', color='black', capsize=3, label=f' {legend_string} ')
@@ -311,18 +287,19 @@ def PlotEfficiency(target_mask_or_indices, reco_mask_or_indices, pfp_branches, p
     ax.set_ylabel('Efficiency')
     ax.set_ylim([0, 1.0])
     ax.grid(True)
+
+    plot_data = {'efficiency_x' : bin_centers, 'efficiency_y' : efficiency, 'efficiency_y_err' : efficiency_err,
+                 'efficiency_x_label' : plot_var.x_label, 'efficiency_y_label' : 'Efficiency', 'efficiency_color' : 'black'}
     
     # Add in underlying distribution 
     ax2 = ax.twinx()
-    PlotVariable(target_mask_or_indices, pfp_branches, plot_var, ax2, 'Dist', color)
+    dist_data = PlotVariable(target_mask_or_indices, pfp_branches, plot_var, ax2, 'Dist', color)
     ax2.set_ylabel(plot_var.y_label, color=color)
     ax2.tick_params(axis='y', colors=color)
     ax2.spines['right'].set_color(color)
-    ax.legend(loc='center right')
 
-    return [efficiency, efficiency_err, edges]
+    return {**plot_data, **dist_data} 
 
-##############################################################################################
 ##############################################################################################
 
 def Plot2DEfficiency(target_mask_or_indices, reco_mask_or_indices, branches, plot_var_x, plot_var_y, ax, label):
@@ -375,8 +352,8 @@ def Plot2DEfficiency(target_mask_or_indices, reco_mask_or_indices, branches, plo
     ax.set_xlabel(plot_var_x.x_label)
     ax.set_ylabel(plot_var_y.x_label)
     
-    
-##############################################################################################
+    return {'empty': np.array([0,0])}
+
 ##############################################################################################
 
 def PrintHierarchyTableHeader(int_type, file) :
@@ -385,7 +362,6 @@ def PrintHierarchyTableHeader(int_type, file) :
     print('           | Correct Parent | False Primary | Wrong Parent | Parent Not Best Match |', file=file)
     print('------------------------------------------------------------------------------------', file=file) 
 
-##############################################################################################
 ##############################################################################################
 
 def CalculateHierarchyMetrics(hierarchy_branches, reco_michel_indices) :
@@ -413,7 +389,6 @@ def CalculateHierarchyMetrics(hierarchy_branches, reco_michel_indices) :
     return hierarchy_metrics
 
 ##############################################################################################
-##############################################################################################
 
 def PrintHierarchyTableEntry(tier, hierarchy_metrics, file) :
     print(' ' + str(Definitions.tier_strings[tier]) + str(' '* (10 - len(str(Definitions.tier_strings[tier])))) +
@@ -424,13 +399,11 @@ def PrintHierarchyTableEntry(tier, hierarchy_metrics, file) :
                                             '|', file=file)
 
 ##############################################################################################
-##############################################################################################
 
 def PrintHierarchyTableFooter(file) :
     print('------------------------------------------------------------------------------------', file=file)
     print('', file=file)
 
-##############################################################################################
 ##############################################################################################
 
 def PrintEfficiencyTableHeader(int_type, file) :
@@ -440,10 +413,8 @@ def PrintEfficiencyTableHeader(int_type, file) :
     print('------------------------------------------------------------------------', file=file)     
 
 ##############################################################################################
-##############################################################################################
 
 def CalculateEfficiencyMetrics(target_mask_or_indices, reco_mask_or_indices, is_mask) :
-
     if (is_mask) :
         n_targets = ak.sum(target_mask_or_indices)
         n_reco = ak.sum(reco_mask_or_indices)
@@ -460,7 +431,6 @@ def CalculateEfficiencyMetrics(target_mask_or_indices, reco_mask_or_indices, is_
     return efficiency_metrics
 
 ##############################################################################################
-##############################################################################################
 
 def PrintEfficiencyTableEntry(tier, pdg, efficiency_metrics, file) :
     title_string = f'{Definitions.tier_strings[tier]} {Definitions.pdg_strings[pdg]}'
@@ -471,8 +441,8 @@ def PrintEfficiencyTableEntry(tier, pdg, efficiency_metrics, file) :
                                             '|', file=file)
 
 ##############################################################################################
-##############################################################################################
 
 def PrintEfficiencyTableFooter(file) :
     print('------------------------------------------------------------------------', file=file)
     print('', file=file)
+    

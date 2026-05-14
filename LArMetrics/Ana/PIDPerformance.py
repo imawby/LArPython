@@ -1,4 +1,3 @@
-# Imports
 import argparse
 import numpy as np
 import uproot
@@ -15,7 +14,6 @@ import os
 import Plots
 
 ##########################################################################################################
-##########################################################################################################
 
 class PIDMethod :
     def __init__(self, dir_name, pid_name, n_classes, branch_names, signal_pdgs, input_type_name, range, n_bins):
@@ -28,7 +26,6 @@ class PIDMethod :
         self.n_bins = n_bins
         self.range = range
 
-##########################################################################################################
 ##########################################################################################################
 
 def PlotROC(fig, ax, pid_var, signal_masks, pid_scores) :
@@ -58,10 +55,8 @@ def PlotROC(fig, ax, pid_var, signal_masks, pid_scores) :
         ax[i_type].grid(True)
 
 ##########################################################################################################
-##########################################################################################################
 
 def PlotConfusionMatrix(fig, ax, pid_var, signal_masks, pid_scores):
-
     y_true = np.vstack(signal_masks)
     y_pred = np.vstack(pid_scores)
 
@@ -94,42 +89,28 @@ def PlotConfusionMatrix(fig, ax, pid_var, signal_masks, pid_scores):
     displayPredNorm.plot(ax=ax[1], cmap='Blues', colorbar=False)        
             
 ##########################################################################################################
-##########################################################################################################
 
 def main(args) :
-
-    #########################
-    # Handle file
-    #########################
     file_name = f'{args.input_file}'
-    file = uproot.open(file_name)
-
-    #########################
-    # Get branches
-    #########################
-    tree = file['ccnuselection/ccnusel']
-    nusel_branches = tree.arrays(['Run', 'SubRun', 'Event', 'RecoPFPTruePrimary',
-                                  'NuPdg', 'NC',
-                                  'NuX', 'NuY', 'NuZ', 'TargetZ',
-                                  'RecoPFPIsPrimary', 'RecoPFPTrackShowerScore', 'RecoPFPRecoNHits',
-                                  'RecoPFPRecoCompleteness', 'RecoPFPRecoHitPurity',
-                                  'RecoPFPTruePDG', 'RecoTrackPandizzleVar',
-                                  'IvysaurusMuonScore', 'IvysaurusProtonScore', 'IvysaurusPionScore', 'IvysaurusElectronScore', 'IvysaurusPhotonScore',
-                                  'RecoShowerEnhancedPandrizzleScore', 'RecoShowerBackupPandrizzleScore'], library='ak')
-
-    #########################
+    with uproot.open(file_name) as file:
+        tree = file['ccnuselection/ccnusel']
+        nusel_branches = tree.arrays(['Run', 'SubRun', 'Event', 'RecoPFPTruePrimary',
+                                      'NuPdg', 'NC',
+                                      'NuX', 'NuY', 'NuZ', 'TargetZ',
+                                      'RecoPFPIsPrimary', 'RecoPFPTrackShowerScore', 'RecoPFPRecoNHits',
+                                      'RecoPFPRecoCompleteness', 'RecoPFPRecoHitPurity',
+                                      'RecoPFPTruePDG', 'RecoTrackPandizzleVar',
+                                      'IvysaurusMuonScore', 'IvysaurusProtonScore', 'IvysaurusPionScore', 'IvysaurusElectronScore', 'IvysaurusPhotonScore',
+                                      'RecoShowerEnhancedPandrizzleScore', 'RecoShowerBackupPandrizzleScore'], library='ak')
+        
     # Create PID objects
-    #########################
     pandizzle_pid = PIDMethod('IzzleSelection', 'Pandizzle', 1, ['RecoTrackPandizzleVar'], [13], 'Tracks', [-1.0, 1.0], 40)
     enhanced_pandrizzle_pid = PIDMethod('IzzleSelection', 'EnhancedPandrizzle', 1, ['RecoShowerEnhancedPandrizzleScore'], [11], 'Showers', [-1.0, 1.0], 40)
     backup_pandrizzle_pid = PIDMethod('IzzleSelection', 'BackupPandizzle', 1, ['RecoShowerBackupPandrizzleScore'], [11], 'Showers', [-1.0, 1.0], 40)
     ivysaurus_pid = PIDMethod('IvysaurusSelection', 'Ivysaurus', 5, ['IvysaurusMuonScore', 'IvysaurusProtonScore', 'IvysaurusPionScore', 'IvysaurusElectronScore', 'IvysaurusPhotonScore'], [13, 2212, 211, 11, 22], 'Particles', [-1.0, 1.0], 40)
 
     for pid_var in [pandizzle_pid, enhanced_pandrizzle_pid, backup_pandrizzle_pid, ivysaurus_pid] :
-
-        #########################
         # Define target
-        #########################
         track_shower_mask = (nusel_branches['RecoPFPTrackShowerScore'] > 0.5) if pid_var.input_type_name == 'Tracks' else ((nusel_branches['RecoPFPTrackShowerScore'] > 0.0) & (nusel_branches['RecoPFPTrackShowerScore'] < 0.5)) if pid_var.input_type_name == 'Showers' else ak.ones_like(nusel_branches['RecoPFPTrackShowerScore'], dtype=bool)
         completeness_mask = (nusel_branches['RecoPFPRecoCompleteness'] > args.completeness_thr)
         purity_mask = (nusel_branches['RecoPFPRecoHitPurity'] > args.purity_thr)
@@ -148,9 +129,7 @@ def main(args) :
             signal_pdgs.append(pid_var.signal_pdgs[i_type])
 
 
-        ############################
         # Plot classification scores
-        ############################
         fig, ax = plt.subplots(ncols=1, nrows=pid_var.n_classes, figsize=((10, 6) if pid_var.n_classes == 1 else (10, 26)))        
         if (type(ax) != np.ndarray) :
             ax = [ax]
@@ -158,26 +137,21 @@ def main(args) :
         PlotROC(fig, ax, pid_var, signal_masks, pid_scores)
         Plots.save_plot(fig, f'{args.plot_dir}/{pid_var.dir_name}/PIDPerformance/{pid_var.pid_name}_ROC.pdf')
 
-        ############################
         # Plot confusion
-        ############################
         if (pid_var.n_classes > 1) :
             fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(10, 12))
             PlotConfusionMatrix(fig, ax, pid_var, signal_masks, pid_scores)
             Plots.save_plot(fig, f'{args.plot_dir}/{pid_var.dir_name}/PIDPerformance/{pid_var.pid_name}_Confusion.pdf')
         
 ##########################################################################################################
-##########################################################################################################
     
 def create_directory_structure(plot_dir) :
     if not os.path.isdir(plot_dir) :
         os.makedirs(plot_dir)
 
-    create_directory(plot_dir, 'IzzleSelection')
     create_directory(f'{plot_dir}/IzzleSelection', 'PIDPerformance')
     create_directory(f'{plot_dir}/IvysaurusSelection', 'PIDPerformance')
     
-##########################################################################################################
 ##########################################################################################################
     
 def create_directory(root_dir, dir_name) :
@@ -185,10 +159,8 @@ def create_directory(root_dir, dir_name) :
         os.makedirs(f'{root_dir}/{dir_name}')
 
 ##########################################################################################################
-##########################################################################################################
             
 def parse_cli():
-    # Set up argument parser
     parser = argparse.ArgumentParser(description="Validation script for Pandora.")
     parser.add_argument("--plot_dir", type=str, required=True, help="Directory for storing plots.")
     parser.add_argument("--input_file", type=str, required=True, help="Path to the input file.")
@@ -198,9 +170,9 @@ def parse_cli():
     return parser.parse_args()
 
 ##########################################################################################################
-##########################################################################################################
 
 if __name__ == "__main__":
     args = parse_cli()
     create_directory_structure(args.plot_dir)
     main(args)
+

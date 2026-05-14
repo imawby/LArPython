@@ -7,7 +7,7 @@ import Variables
 ####################################################################################################################################################
 
 def run_track_validation(plot_dir_path, config_target_mask, config_reco_mask, int_masks, tier_masks, pdg_masks, track_branches) :
-
+    print('Running Track Validation...')
     for int_type in Definitions.ints :
         int_mask = int_masks[int_type]
             
@@ -31,7 +31,6 @@ def run_track_validation(plot_dir_path, config_target_mask, config_reco_mask, in
 
                 # Plot BM_var distributions
                 ValidationFunc.create_plots({'reco' : reco_mask}, track_branches, ValidationFunc.PlotVariable, Variables.Track_BM_plotting_vars, f'{plot_dir_path}/BM', plot_config)
-
                 
 #####################################################################################################################################################
 ####################################################################################################################################################
@@ -67,11 +66,11 @@ def run_michel_validation(plot_dir_path, config_target_mask, config_reco_mask, i
     
                 # Efficiency Metrics
                 efficiency_metrics = ValidationFunc.CalculateEfficiencyMetrics(target_michel_indices, reco_michel_indices, False)
-                ValidationFunc.PrintEfficiencyTableEntry(tier, 777, efficiency_metrics, f_efficiency)
+                ValidationFunc.PrintEfficiencyTableEntry(tier, Definitions.MICHEL_PDG, efficiency_metrics, f_efficiency)
 
                 # Plot_config
-                file_name = f'{Definitions.int_file_strings[int_type]}_{Definitions.tier_strings[tier + 1]}_{Definitions.pdg_strings[777]}'                
-                plot_config = ValidationFunc.PlotConfig(file_name, Definitions.int_strings[int_type], Definitions.tier_strings[tier + 1], Definitions.pdg_strings[777], Definitions.pdg_color[777])
+                file_name = f'{Definitions.int_file_strings[int_type]}_{Definitions.tier_strings[tier + 1]}_{Definitions.pdg_strings[Definitions.MICHEL_PDG]}'                
+                plot_config = ValidationFunc.PlotConfig(file_name, Definitions.int_strings[int_type], Definitions.tier_strings[tier + 1], Definitions.pdg_strings[Definitions.MICHEL_PDG], Definitions.pdg_color[Definitions.MICHEL_PDG])
 
                 # Plot MCP_var distributions
                 ValidationFunc.create_plots({'target' : target_michel_indices}, pfp_branches, ValidationFunc.PlotVariable, Variables.Michel_MCP_plotting_vars, f'{plot_dir_path}/MC', plot_config)
@@ -84,3 +83,4 @@ def run_michel_validation(plot_dir_path, config_target_mask, config_reco_mask, i
                         
             ValidationFunc.PrintHierarchyTableFooter(f_hierarchy)
             ValidationFunc.PrintEfficiencyTableFooter(f_efficiency)
+            

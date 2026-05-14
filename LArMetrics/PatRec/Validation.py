@@ -1,4 +1,3 @@
-# Imports
 import argparse
 import uproot
 import numpy as np
@@ -13,55 +12,75 @@ import PFPValidationFunc
 import ShowerValidationFunc
 import TrackValidationFunc
 
+##########################################################################################################
+
 def main(args) :
 
-    #########################
-    # Handle file
-    #########################
     file_name = f'{args.validation_file}'
-    file = uproot.open(file_name)
+    with uproot.open(file_name) as file:    
+        event_tree = file['EventTree']
+        pfp_tree = file['PFPTree']
+        track_tree = file['TrackTree']
+        shower_tree = file['ShowerTree']
+        hierarchy_tree = file['HierarchyTree']
 
-    #########################
-    # Get branches
-    #########################
-    event_tree = file['EventTree']
-    pfp_tree = file['PFPTree']
-    track_tree = file['TrackTree']
-    shower_tree = file['ShowerTree']
-    hierarchy_tree = file['HierarchyTree']
+        event_branches = event_tree.arrays(['Run', 'Subrun', 'Event', 'MCInt_IsCC', 'MCNu_PDG', 'MCNu_Energy', 'MCNu_VisEnergy',
+                                            'MCNu_VertexX', 'MCNu_VertexY', 'MCNu_VertexZ',
+                                            'RecoNu_VertexX', 'RecoNu_VertexY', 'RecoNu_VertexZ',
+                                            'RecoNu_VertexAcc_Pass2'], library="ak")
 
-    event_branches = event_tree.arrays(['Run', 'Subrun', 'Event', 'MCInt_IsCC', 'MCNu_PDG', 'MCNu_Energy', 'MCNu_VisEnergy',
-                                        'MCNu_VertexX', 'MCNu_VertexY', 'MCNu_VertexZ',
-                                        'RecoNu_VertexX', 'RecoNu_VertexY', 'RecoNu_VertexZ',
-                                        'RecoNu_VertexAcc_Pass2'], library="ak")
+        pfp_branches = pfp_tree.arrays(['MCP_TruePDG', 'MCP_TrueEnergy', 'MCP_TrueVisEnergy', 'MCP_TrueThetaXZ', 'MCP_TrueThetaYZ',
+                                        'MCP_NMCHits2D', 'MCP_NMCHitsU', 'MCP_NMCHitsV', 'MCP_NMCHitsW',
+                                        'MCP_HasMatch', 'MCP_Length', 'MCP_Displacement',
+                                        'BM_IsTrack', 'BM_IsShower',
+                                        'BM_Completeness', 'BM_CompletenessU', 'BM_CompletenessV', 'BM_CompletenessW',
+                                        'BM_Purity', 'BM_PurityU', 'BM_PurityV', 'BM_PurityW',
+                                        'BM_VertexAcc', 'BM_Length', 'BM_Displacement',
+                                        'ALT_Completeness', 'ALT_Purity', 'ALT_PDG', 'ALT_IsUpstreamHierarchy', 'ALT_IsSameMC'], library="ak")    
 
-    pfp_branches = pfp_tree.arrays(['MCP_TruePDG', 'BM_VertexAcc', 'MCP_TrueVisEnergy', 
-                                    'MCP_NMCHits2D', 'MCP_NMCHitsU', 'MCP_NMCHitsV', 'MCP_NMCHitsW',
-                                    'BM_IsTrack', 'BM_IsShower',
-                                    'BM_Completeness', 'BM_Purity'], library="ak")
+        shower_branches = shower_tree.arrays(['MCP_TrueCoreLengthFromU', 'MCP_TrueCoreLengthFromV', 'MCP_TrueCoreLengthFromW',
+                                              'BM_RecoCoreLength', 'BM_RecoLength', 'BM_MoliereRadius',
+                                              'BM_DirAcc',
+                                              'MCP_InitialMCHits', 'MCP_InitialMCHitsU', 'MCP_InitialMCHitsV', 'MCP_InitialMCHitsW',
+                                              'BM_InitialPfoHits', 'BM_InitialPfoHitsU', 'BM_InitialPfoHitsV', 'BM_InitialPfoHitsW',
+                                              'BM_InitialCompleteness', 'BM_InitialCompletenessU', 'BM_InitialCompletenessV', 'BM_InitialCompletenessW',
+                                              'BM_InitialPurity', 'BM_InitialPurityU', 'BM_InitialPurityV', 'BM_InitialPurityW'], library="ak")    
 
-    pfp_branches = pfp_tree.arrays(['MCP_TruePDG', 'MCP_TrueEnergy', 'MCP_TrueVisEnergy', 'MCP_TrueThetaXZ', 'MCP_TrueThetaYZ',
-                                    'MCP_NMCHits2D', 'MCP_NMCHitsU', 'MCP_NMCHitsV', 'MCP_NMCHitsW',
-                                    'MCP_HasMatch', 'MCP_Length', 'MCP_Displacement',
-                                    'BM_IsTrack', 'BM_IsShower',
-                                    'BM_Completeness', 'BM_CompletenessU', 'BM_CompletenessV', 'BM_CompletenessW',
-                                    'BM_Purity', 'BM_PurityU', 'BM_PurityV', 'BM_PurityW',
-                                    'BM_VertexAcc', 'BM_Length', 'BM_Displacement',
-                                    'ALT_Completeness', 'ALT_Purity', 'ALT_PDG', 'ALT_IsUpstreamHierarchy', 'ALT_IsSameMC'], library="ak")    
+        track_branches = track_tree.arrays(['BM_EndpointAcc', 'BM_EndpointCompleteness', 'BM_EndpointPurity', 
+                                            'MCP_HasMichel', 'MCP_HasTargetMichel', 'BM_IsMichelRecod', 'MCP_MichelIndex', 
+                                            'BM_MichelIsChild', 'BM_MichelIsShower', 'MCP_MichelFromMuon', 'MCP_EndpointsMCHits'], library="ak")    
 
-    shower_branches = shower_tree.arrays(['MCP_TrueCoreLengthFromU', 'MCP_TrueCoreLengthFromV', 'MCP_TrueCoreLengthFromW',
-                                          'BM_RecoCoreLength', 'BM_RecoLength', 'BM_MoliereRadius',
-                                          'BM_DirAcc',
-                                          'MCP_InitialMCHits', 'MCP_InitialMCHitsU', 'MCP_InitialMCHitsV', 'MCP_InitialMCHitsW',
-                                          'BM_InitialPfoHits', 'BM_InitialPfoHitsU', 'BM_InitialPfoHitsV', 'BM_InitialPfoHitsW',
-                                          'BM_InitialCompleteness', 'BM_InitialCompletenessU', 'BM_InitialCompletenessV', 'BM_InitialCompletenessW',
-                                          'BM_InitialPurity', 'BM_InitialPurityU', 'BM_InitialPurityV', 'BM_InitialPurityW'], library="ak")    
+        hierarchy_branches = hierarchy_tree.arrays(['MC_HierarchyTier', 'MC_ParentIndex', 'BM_HierarchyTier', 'BM_ParentIndex'], library="ak")
 
-    track_branches = track_tree.arrays(['BM_EndpointAcc', 'BM_EndpointCompleteness', 'BM_EndpointPurity', 
-                                        'MCP_HasMichel', 'MCP_HasTargetMichel', 'BM_IsMichelRecod', 'MCP_MichelIndex', 
-                                        'BM_MichelIsChild', 'BM_MichelIsShower', 'MCP_MichelFromMuon', 'MCP_EndpointsMCHits'], library="ak")    
+    #############################
+    # Add is leading photon info
+    #############################
+    pdg = pfp_branches["MCP_TruePDG"]
+    visE = pfp_branches["MCP_TrueVisEnergy"]
+    parent = hierarchy_branches["MC_ParentIndex"]
+    is_pi0_photon = (pdg == 111)
+    particle_idx = ak.local_index(pdg) # global index of particles within each event
+    leading_photon_mask = []
 
-    hierarchy_branches = hierarchy_tree.arrays(['MC_HierarchyTier', 'MC_ParentIndex', 'BM_HierarchyTier', 'BM_ParentIndex'], library="ak")
+    for evt_pdg, evt_visE, evt_parent, evt_mask in zip(pdg, visE, parent, is_pi0_photon):
+        evt_out = np.zeros(len(evt_pdg), dtype=bool)
+        # only photons from pi0 decays
+        photon_idx = np.arange(len(evt_pdg))
+        photon_idx = photon_idx[np.array(evt_mask)]
+        photon_parent = np.array(evt_parent[evt_mask])
+        photon_visE = np.array(evt_visE[evt_mask])
+
+        # unique pi0 parents
+        for p in np.unique(photon_parent):
+            inds = photon_idx[photon_parent == p]
+            energies = photon_visE[photon_parent == p]
+            # choose photon with max visible energy
+            lead = inds[np.argmax(energies)]
+            evt_out[lead] = True
+            
+        leading_photon_mask.append(evt_out)
+
+    pfp_branches = ak.with_field(pfp_branches, ak.Array(leading_photon_mask), "MCP_IsLeadingPhoton")
 
     ###################################
     # Create interaction/tier/PDG masks
@@ -79,22 +98,35 @@ def main(args) :
     pfp_target_mask = Definitions.GetIsTargetMask(pfp_branches)
     pfp_reco_mask = Definitions.GetIsRecoMask(pfp_target_mask, pfp_branches)
 
+    #######################
+    # Add multiplicity info
+    #######################
+    multiplicity = ak.sum(pfp_target_mask, axis=1)
+    shower_multiplicity = ak.sum(pfp_target_mask & ((abs(pfp_branches['MCP_TruePDG']) == 11) | (pfp_branches['MCP_TruePDG'] == 22) | (pfp_branches['MCP_TruePDG'] == 777) | (pfp_branches['MCP_TruePDG'] == 111)), axis=1)
+    track_multiplicity = ak.sum(pfp_target_mask & (abs(pfp_branches['MCP_TruePDG']) != 11) & (pfp_branches['MCP_TruePDG'] != 22) & (pfp_branches['MCP_TruePDG'] != 777) & (pfp_branches['MCP_TruePDG'] != 111), axis=1)
+    # Match shape to PFP jagged array
+    multiplicity = ak.broadcast_arrays(multiplicity, pfp_branches['MCP_TruePDG'])[0]
+    shower_multiplicity = ak.broadcast_arrays(shower_multiplicity, pfp_branches['MCP_TruePDG'])[0]
+    track_multiplicity = ak.broadcast_arrays(track_multiplicity, pfp_branches['MCP_TruePDG'])[0]
+    pfp_branches = ak.with_field(pfp_branches, multiplicity, "MCNu_Multiplicity")
+    pfp_branches = ak.with_field(pfp_branches, shower_multiplicity, "MCNu_ShowerMultiplicity")
+    pfp_branches = ak.with_field(pfp_branches, track_multiplicity, "MCNu_TrackMultiplicity")
+
+    #######################
+    # Make plots
+    #######################
     # Event Validation Plots
     event_plot_dir = f'{args.plot_dir}/EventValidation/'
     EventValidationFunc.run_event_validation(event_plot_dir, int_masks, event_branches)
-
     # Hierarchy Validation Plots
     hierarchy_plot_dir = f'{args.plot_dir}/HierarchyValidation/'
     HierarchyValidationFunc.run_hierarchy_validation(hierarchy_plot_dir, pfp_target_mask, pfp_reco_mask, int_masks_broadcast, tier_masks, pdg_masks, hierarchy_branches, pfp_branches)
-
     # PFP Validation Plots
     pfp_plot_dir = f'{args.plot_dir}/PFPValidation/'
     PFPValidationFunc.run_pfp_validation(pfp_plot_dir, pfp_target_mask, pfp_reco_mask, int_masks, tier_masks, pdg_masks, pfp_branches)
-
     # Shower Validation Plots
     shower_plot_dir = f'{args.plot_dir}/ShowerValidation/'
     ShowerValidationFunc.run_shower_validation(shower_plot_dir, pfp_target_mask, pfp_reco_mask, int_masks_broadcast, tier_masks, pdg_masks, shower_branches)
-
     # Track Validation Plots
     track_plot_dir = f'{args.plot_dir}/TrackValidation/Track'
     TrackValidationFunc.run_track_validation(track_plot_dir, pfp_target_mask, pfp_reco_mask, int_masks_broadcast, tier_masks, pdg_masks, track_branches)
@@ -102,7 +134,6 @@ def main(args) :
             michel_plot_dir = f'{args.plot_dir}/TrackValidation/Michel/{Definitions.michel_type_strings[michel_type]}'
             TrackValidationFunc.run_michel_validation(michel_plot_dir, pfp_target_mask, pfp_reco_mask, int_masks_broadcast, tier_masks, pdg_masks, hierarchy_branches, pfp_branches, track_branches, michel_type)
     
-##########################################################################################################
 ##########################################################################################################
     
 def create_directory_structure(plot_dir) :
@@ -153,15 +184,12 @@ def create_directory_structure(plot_dir) :
         create_subdirectory(f'{plot_dir}/TrackValidation/Michel/{Definitions.michel_type_strings[michel_type]}', 'TrackShower', Variables.Michel_track_shower_vars)
         create_subdirectory(f'{plot_dir}/TrackValidation/Michel/{Definitions.michel_type_strings[michel_type]}', 'Efficiency', Variables.Michel_efficiency_vars)
 
-    
-##########################################################################################################
 ##########################################################################################################
     
 def create_tree_directory(root_dir, tree_name) :
     if not os.path.isdir(f'{root_dir}/{tree_name}') :
         os.makedirs(f'{root_dir}/{tree_name}')
     
-##########################################################################################################
 ##########################################################################################################
     
 def create_subdirectory(root_dir, sub_dir, plot_vars) :
@@ -172,19 +200,17 @@ def create_subdirectory(root_dir, sub_dir, plot_vars) :
             os.makedirs(f'{root_dir}/{sub_dir}/{plot_var.dir_name}')
             
 ##########################################################################################################
-##########################################################################################################
             
 def parse_cli():
-    # Set up argument parser
     parser = argparse.ArgumentParser(description="Validation script for Pandora.")
     parser.add_argument("--plot_dir", type=str, required=True, help="Directory for storing plots.")
     parser.add_argument("--validation_file", type=str, required=True, help="Path to the validation file.")
     return parser.parse_args()
 
 ##########################################################################################################
-##########################################################################################################
 
 if __name__ == "__main__":
     args = parse_cli()
     create_directory_structure(args.plot_dir)
     main(args)
+    

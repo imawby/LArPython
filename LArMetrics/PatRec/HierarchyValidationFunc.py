@@ -2,15 +2,14 @@ import awkward as ak
 import Definitions
 
 ##############################################################################################
-##############################################################################################
 
 def run_hierarchy_validation(plot_dir, target_mask, reco_mask, int_masks, tier_masks, pdg_masks, hierarchy_branches, pfp_branches) :
+    print('Running Hierarchy Validation...')
     create_table_metrics(plot_dir, target_mask, reco_mask, int_masks, tier_masks, pdg_masks, hierarchy_branches, pfp_branches, demand_parent_has_match=True, split_by_pdg=True)
     create_table_metrics(plot_dir, target_mask, reco_mask, int_masks, tier_masks, pdg_masks, hierarchy_branches, pfp_branches, demand_parent_has_match=True, split_by_pdg=False)
     create_table_metrics(plot_dir, target_mask, reco_mask, int_masks, tier_masks, pdg_masks, hierarchy_branches, pfp_branches, demand_parent_has_match=False, split_by_pdg=True)
     create_table_metrics(plot_dir, target_mask, reco_mask, int_masks, tier_masks, pdg_masks, hierarchy_branches, pfp_branches, demand_parent_has_match=False, split_by_pdg=False)
 
-##############################################################################################
 ##############################################################################################
 
 def create_table_metrics(plot_dir, target_mask, reco_mask, int_masks, tier_masks,  pdg_masks, hierarchy_branches, pfp_branches, demand_parent_has_match, split_by_pdg) :
@@ -33,10 +32,8 @@ def create_table_metrics(plot_dir, target_mask, reco_mask, int_masks, tier_masks
             pdgs = Definitions.pdgs if split_by_pdg else [-1]
         
             for pdg in pdgs :
-        
                 pdg_mask = pdg_masks[pdg] if split_by_pdg else ak.ones_like(int_masks[int_type])
                 pdg_string = Definitions.pdg_strings[pdg] if split_by_pdg else 'All PDG'
-            
                 print(f'{Definitions.int_strings[int_type]} - {pdg_string}', file=f)
                 print('------------------------------------------------------------------------------------', file=f)
                 print('           | Correct Parent | False Primary | Wrong Parent | Parent Not Best Match |', file=f)
@@ -83,3 +80,4 @@ def create_table_metrics(plot_dir, target_mask, reco_mask, int_masks, tier_masks
                                                             '|', file=f)
                 print('------------------------------------------------------------------------------------', file=f)
                 print('', file=f)
+                
