@@ -47,10 +47,6 @@ def IsNC(nusel_branches) :
 #####################################################################################################################
 
 def IsInFiducialVolume(nusel_branches, fv_dict, useTruth) :
-    minX, maxX = -360.0 + 50.0, 360.0 - 50.0
-    minY, maxY = -600.0 + 50.0, 600.0 - 50.0
-    minZ, maxZ = 50.0, 1394.0 - 150.0
-
     true_x = nusel_branches['NuX'] if useTruth else nusel_branches['RecoNuVtxX']
     true_y = nusel_branches['NuY'] if useTruth else nusel_branches['RecoNuVtxY']
     true_z = nusel_branches['NuZ'] if useTruth else nusel_branches['RecoNuVtxZ']

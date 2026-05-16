@@ -102,8 +102,8 @@ def main(args) :
     # Add multiplicity info
     #######################
     multiplicity = ak.sum(pfp_target_mask, axis=1)
-    shower_multiplicity = ak.sum(pfp_target_mask & ((abs(pfp_branches['MCP_TruePDG']) == 11) | (pfp_branches['MCP_TruePDG'] == 22) | (pfp_branches['MCP_TruePDG'] == 777) | (pfp_branches['MCP_TruePDG'] == 111)), axis=1)
-    track_multiplicity = ak.sum(pfp_target_mask & (abs(pfp_branches['MCP_TruePDG']) != 11) & (pfp_branches['MCP_TruePDG'] != 22) & (pfp_branches['MCP_TruePDG'] != 777) & (pfp_branches['MCP_TruePDG'] != 111), axis=1)
+    shower_multiplicity = ak.sum(pfp_target_mask & ((abs(pfp_branches['MCP_TruePDG']) == 11) | (pfp_branches['MCP_TruePDG'] == 22) | (pfp_branches['MCP_TruePDG'] == MICHEL_PDG) | (pfp_branches['MCP_TruePDG'] == 111)), axis=1)
+    track_multiplicity = ak.sum(pfp_target_mask & (abs(pfp_branches['MCP_TruePDG']) != 11) & (pfp_branches['MCP_TruePDG'] != 22) & (pfp_branches['MCP_TruePDG'] != MICHEL_PDG) & (pfp_branches['MCP_TruePDG'] != 111), axis=1)
     # Match shape to PFP jagged array
     multiplicity = ak.broadcast_arrays(multiplicity, pfp_branches['MCP_TruePDG'])[0]
     shower_multiplicity = ak.broadcast_arrays(shower_multiplicity, pfp_branches['MCP_TruePDG'])[0]

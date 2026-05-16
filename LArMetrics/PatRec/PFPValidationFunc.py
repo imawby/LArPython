@@ -80,7 +80,6 @@ def TrackShowerClassification(reco_mask, pdg_masks, pfp_branches, fig, ax, int_t
     conf_matrix_eff = []
 
     for pdg in Definitions.pdgs :
-
         if (pdg == 0) :
             continue
         

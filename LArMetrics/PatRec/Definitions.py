@@ -32,14 +32,23 @@ int_color = {
     3: "tab:pink"
 }
 
+# Michel type descriptor
+MICHEL_PDG = 777
+michel_types = [0, 1, 2]
+michel_type_strings = {
+    0 : "FromMuon",
+    1 : "FromPion",
+    2 : "All"
+}
+
 # PDG descriptors
-pdgs = [13, 2212, 211, 777, 22, 11, 111, -111, 0]
+pdgs = [13, 2212, 211, MICHEL_PDG, 22, 11, 111, -111, 0]
 shower_pdgs = [22, 11]
 pdg_strings = {
     13   : "Muon",
     2212 : "Proton",
     211  : "ChPion",
-    777  : "Michel",
+    MICHEL_PDG : "Michel",
     22   : "Photon",
     11   : "Electron",
     111  : "LeadingPi0Photon",
@@ -51,7 +60,7 @@ pdg_color = {
     13   : "Blue",
     2212 : "tab:green",
     211  : "tab:pink", 
-    777  : 'tab:purple',     
+    MICHEL_PDG : 'tab:purple',     
     22   : "tab:orange",
     11   : "Red",
     111  : "tab:olive",
@@ -71,15 +80,6 @@ tier_style = {
     0  : "solid",
     1  : "dashed",
     2  : "dotted"
-}
-
-# Michel type descriptor
-MICHEL_PDG = 777
-michel_types = [0, 1, 2]
-michel_type_strings = {
-    0 : "FromMuon",
-    1 : "FromPion",
-    2 : "All"
 }
 
 ##############################################################################################
@@ -133,7 +133,7 @@ def GetPDGMasks(pfp_branches) :
         13   : (mc_pdg == 13),
         2212 : (mc_pdg == 2212),
         211  : (mc_pdg == 211),
-        777  : (mc_pdg == 777),
+        MICHEL_PDG : (mc_pdg == MICHEL_PDG),
         22   : (mc_pdg == 22),
         11   : (mc_pdg == 11),
         111  : (mc_pdg == 111) & (pfp_branches['MCP_IsLeadingPhoton']),
