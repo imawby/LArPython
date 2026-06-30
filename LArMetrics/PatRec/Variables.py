@@ -121,7 +121,9 @@ Event_diff_plotting_vars = [nu_vtx_delta_x, nu_vtx_delta_y, nu_vtx_delta_z]
 # ALT
 alt_pfp_seg_var = SegVar('PDG', 'ALT_PDG', [13, 2212, 211, 777, 22, 11, 111], ["Blue", "tab:green", "tab:pink", 'tab:purple', "tab:orange", "Red", "tab:olive"])
 alt_is_up_hierarchy_seg_var = SegVar('IsUpstreamHierarchy', 'ALT_IsUpstreamHierarchy', [-1, 0, 1], ["tab:gray", "red", "green"]) 
-alt_is_same_mc_var = SegVar('IsSameMC', 'ALT_IsSameMC', [-1, 0, 1], ["tab:gray", "red", "green"]) 
+alt_is_same_mc_var = SegVar('IsSameMC', 'ALT_IsSameMC', [-1, 0, 1], ["tab:gray", "red", "green"])
+n_views = SegVar('NViews', 'BM_NViews', [0, 1, 2, 3], ["Red", "Blue", "tab:olive", 'tab:purple'])
+
 ALT_seg_vars = [alt_pfp_seg_var, alt_is_up_hierarchy_seg_var, alt_is_same_mc_var]
 
 ###############################################
