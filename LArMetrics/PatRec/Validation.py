@@ -31,6 +31,7 @@ def main(args) :
 
         pfp_branches = pfp_tree.arrays(['MCP_TruePDG', 'MCP_TrueEnergy', 'MCP_TrueVisEnergy', 'MCP_TrueThetaXZ', 'MCP_TrueThetaYZ',
                                         'MCP_NMCHits2D', 'MCP_NMCHitsU', 'MCP_NMCHitsV', 'MCP_NMCHitsW',
+                                        'BM_NPfoHitsU', 'BM_NPfoHitsV', 'BM_NPfoHitsW',
                                         'MCP_HasMatch', 'MCP_Length', 'MCP_Displacement',
                                         'BM_IsTrack', 'BM_IsShower',
                                         'BM_Completeness', 'BM_CompletenessU', 'BM_CompletenessV', 'BM_CompletenessW',
@@ -82,6 +83,15 @@ def main(args) :
 
     pfp_branches = ak.with_field(pfp_branches, ak.Array(leading_photon_mask), "MCP_IsLeadingPhoton")
 
+    #############################
+    # Add NReco views info
+    #############################
+    n_views = (ak.values_astype(pfp_branches["BM_NPfoHitsU"] > 0, np.int32)
+               + ak.values_astype(pfp_branches["BM_NPfoHitsV"] > 0, np.int32)
+               + ak.values_astype(pfp_branches["BM_NPfoHitsW"] > 0, np.int32))
+
+    pfp_branches = ak.with_field(pfp_branches, n_views, "BM_NViews")
+
     ###################################
     # Create interaction/tier/PDG masks
     ###################################
@@ -102,8 +112,8 @@ def main(args) :
     # Add multiplicity info
     #######################
     multiplicity = ak.sum(pfp_target_mask, axis=1)
-    shower_multiplicity = ak.sum(pfp_target_mask & ((abs(pfp_branches['MCP_TruePDG']) == 11) | (pfp_branches['MCP_TruePDG'] == 22) | (pfp_branches['MCP_TruePDG'] == MICHEL_PDG) | (pfp_branches['MCP_TruePDG'] == 111)), axis=1)
-    track_multiplicity = ak.sum(pfp_target_mask & (abs(pfp_branches['MCP_TruePDG']) != 11) & (pfp_branches['MCP_TruePDG'] != 22) & (pfp_branches['MCP_TruePDG'] != MICHEL_PDG) & (pfp_branches['MCP_TruePDG'] != 111), axis=1)
+    shower_multiplicity = ak.sum(pfp_target_mask & ((abs(pfp_branches['MCP_TruePDG']) == 11) | (pfp_branches['MCP_TruePDG'] == 22) | (pfp_branches['MCP_TruePDG'] == Definitions.MICHEL_PDG) | (pfp_branches['MCP_TruePDG'] == 111)), axis=1)
+    track_multiplicity = ak.sum(pfp_target_mask & (abs(pfp_branches['MCP_TruePDG']) != 11) & (pfp_branches['MCP_TruePDG'] != 22) & (pfp_branches['MCP_TruePDG'] != Definitions.MICHEL_PDG) & (pfp_branches['MCP_TruePDG'] != 111), axis=1)
     # Match shape to PFP jagged array
     multiplicity = ak.broadcast_arrays(multiplicity, pfp_branches['MCP_TruePDG'])[0]
     shower_multiplicity = ak.broadcast_arrays(shower_multiplicity, pfp_branches['MCP_TruePDG'])[0]
@@ -131,8 +141,8 @@ def main(args) :
     track_plot_dir = f'{args.plot_dir}/TrackValidation/Track'
     TrackValidationFunc.run_track_validation(track_plot_dir, pfp_target_mask, pfp_reco_mask, int_masks_broadcast, tier_masks, pdg_masks, track_branches)
     for michel_type in Definitions.michel_types :
-            michel_plot_dir = f'{args.plot_dir}/TrackValidation/Michel/{Definitions.michel_type_strings[michel_type]}'
-            TrackValidationFunc.run_michel_validation(michel_plot_dir, pfp_target_mask, pfp_reco_mask, int_masks_broadcast, tier_masks, pdg_masks, hierarchy_branches, pfp_branches, track_branches, michel_type)
+        michel_plot_dir = f'{args.plot_dir}/TrackValidation/Michel/{Definitions.michel_type_strings[michel_type]}'
+        TrackValidationFunc.run_michel_validation(michel_plot_dir, pfp_target_mask, pfp_reco_mask, int_masks_broadcast, tier_masks, pdg_masks, hierarchy_branches, pfp_branches, track_branches, michel_type)
     
 ##########################################################################################################
     
@@ -155,9 +165,13 @@ def create_directory_structure(plot_dir) :
     create_subdirectory(f'{plot_dir}/PFPValidation', 'MC', Variables.PFP_MCP_plotting_vars)
     create_subdirectory(f'{plot_dir}/PFPValidation', 'BM', Variables.PFP_BM_plotting_vars)
     create_subdirectory(f'{plot_dir}/PFPValidation', 'Diff', Variables.PFP_diff_plotting_vars)
+    
     create_subdirectory(f'{plot_dir}/PFPValidation', 'Alt', Variables.PFP_ALT_plotting_vars)
     for plot_var in Variables.PFP_ALT_plotting_vars :
         create_subdirectory(f'{plot_dir}/PFPValidation/Alt', f'{plot_var.dir_name}_Seg', Variables.ALT_seg_vars)
+    create_subdirectory(f'{plot_dir}/PFPValidation', 'NViews', [Variables.completeness, Variables.purity])
+    for plot_var in [Variables.completeness, Variables.purity] :
+        create_subdirectory(f'{plot_dir}/PFPValidation/NViews', f'{plot_var.dir_name}_Seg', [Variables.n_views])
     
     create_subdirectory(f'{plot_dir}/PFPValidation', 'XProfile', Variables.PFP_profile_vars)    
     create_subdirectory(f'{plot_dir}/PFPValidation', 'TrackShower', Variables.PFP_track_shower_plotting_vars)

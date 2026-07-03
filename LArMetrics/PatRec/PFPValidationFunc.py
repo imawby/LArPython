@@ -56,9 +56,10 @@ def run_pfp_validation(plot_dir_path, config_target_mask, config_reco_mask, int_
                     # Plot alt vars
                     ValidationFunc.create_plots({'target' : target_mask}, pfp_branches, ValidationFunc.PlotVariable, Variables.PFP_ALT_plotting_vars, f'{plot_dir_path}/Alt', plot_config)
 
-                    # Segment alt vars
+                    # Segment vars
                     ValidationFunc.segment_plot_vars({'target' : target_mask}, pfp_branches, ValidationFunc.SegmentAltVar, Variables.PFP_ALT_plotting_vars, Variables.ALT_seg_vars, f'{plot_dir_path}/Alt', plot_config)
-
+                    ValidationFunc.segment_plot_vars({'target' : target_mask}, pfp_branches, ValidationFunc.SegmentAltVar, [Variables.completeness, Variables.purity], [Variables.n_views], f'{plot_dir_path}/NViews', plot_config)
+                    
                     # Plot efficiency
                     ValidationFunc.create_plots({'target' : target_mask, 'reco' : reco_mask}, pfp_branches, ValidationFunc.PlotEfficiency, Variables.PFP_efficiency_vars, f'{plot_dir_path}/Efficiency', plot_config)
                     
