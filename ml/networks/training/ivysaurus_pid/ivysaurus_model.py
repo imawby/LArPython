@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+########################################################################################################
 
 class ViewScaler(nn.Module):
-    """Learnable per-view affine calibration: x * scale + shift."""
     def __init__(self):
         super().__init__()
         self.scale = nn.Parameter(torch.ones(1))
@@ -13,18 +13,16 @@ class ViewScaler(nn.Module):
     def forward(self, x):
         return x * self.scale + self.shift
 
+########################################################################################################    
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, filters, kernel_size=3):
         super().__init__()
         pad = kernel_size // 2
-
         self.conv1 = nn.Conv2d(in_channels, filters, kernel_size, padding=pad, bias=False)
         self.bn1 = nn.BatchNorm2d(filters)
-
         self.conv2 = nn.Conv2d(filters, filters, kernel_size, padding=pad, bias=False)
         self.bn2 = nn.BatchNorm2d(filters)
-
         self.dropout = nn.Dropout2d(0.1)
         
         # Match channels if needed
@@ -37,7 +35,6 @@ class ResidualBlock(nn.Module):
 
     def forward(self, x):
         shortcut = x
-
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
 
@@ -46,56 +43,50 @@ class ResidualBlock(nn.Module):
 
         out = out + shortcut
         out = F.relu(out)
-        
         out = self.dropout(out)
         
         return out
 
+########################################################################################################
+    
 class SpatialAttention(nn.Module):
     def __init__(self, kernel_size=3):
         super().__init__()
-
         padding = kernel_size // 2
         self.conv = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
-        #nn.init.zeros_(self.conv.weight)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         avg_out = torch.mean(x, dim=1, keepdim=True)
         max_out = torch.amax(x, dim=1, keepdim=True)
-
         combined = torch.cat([avg_out, max_out], dim=1)
-
         attention_map = self.sigmoid(self.conv(combined))
 
         return attention_map
+
+########################################################################################################
     
 class SharedEncoder(nn.Module):
-    """Input: (N, 2, 24, 24) -> output: (N, 128)."""
     def __init__(self):
         super().__init__()
 
         self.stem = nn.Sequential(
-            nn.Conv2d(2, 32, 3, padding=1, bias=False),  # 'same'
+            nn.Conv2d(2, 32, 3, padding=1, bias=False),
             nn.BatchNorm2d(32),
             nn.ReLU(inplace=True),
-        )                             # 24->24
+        )
 
         self.block1 = nn.Sequential(
             ResidualBlock(32, 32),
-            #ResidualBlock(32, 32),
         )
-        self.pool1 = nn.MaxPool2d(2)  # 24 -> 12
+        self.pool1 = nn.MaxPool2d(2)
 
         self.block2 = nn.Sequential(
             ResidualBlock(32, 64),
-            #ResidualBlock(64, 64),
         )
-        #self.pool2 = nn.MaxPool2d(2) # 12 -> 6
 
         self.block3 = nn.Sequential(
             ResidualBlock(64, 128),
-            #ResidualBlock(128, 128),
         )
 
         self.spatial_attention = SpatialAttention()
@@ -117,7 +108,8 @@ class SharedEncoder(nn.Module):
         
         return x
 
-
+########################################################################################################
+    
 class IvysaurusModel(nn.Module):
     def __init__(self, dimensions, nclasses, nTrackVars, nShowerVars):
         super().__init__()
@@ -129,12 +121,9 @@ class IvysaurusModel(nn.Module):
         self.scalerV = ViewScaler()
         self.scalerW = ViewScaler()
 
-        # Each branch: concat(start_feat, end_feat) -> 128 + 128 = 256
-        # Three branches (U/V/W) -> 256 * 3 = 768
-        #encoder_out = 384
-        encoder_out = (128*3)
-        branch_out = encoder_out * 2
-        combined_feat = branch_out * 3 + nTrackVars + nShowerVars
+        # Each branch: 2 input channels for start and end grid in each of three views
+        encoder_out = 128 * 2 * 2 * 3
+        combined_feat = encoder_out + nTrackVars + nShowerVars
 
         self.head = nn.Sequential(
             nn.Linear(combined_feat, 256, bias=False),
@@ -145,11 +134,8 @@ class IvysaurusModel(nn.Module):
             nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
             nn.Dropout(0.3))
-
         self.out = nn.Linear(128, nclasses)
 
-
-        
     def _branch(self, start_scaled, start_mask, end_scaled, end_mask):
         start_combined = torch.cat([start_scaled, start_mask], dim=1)  # (N, 2, H, W)
         end_combined   = torch.cat([end_scaled, end_mask], dim=1)      # (N, 2, H, W)
@@ -180,10 +166,8 @@ class IvysaurusModel(nn.Module):
 
         startU = self.scalerU(startU)
         endU = self.scalerU(endU)
-
         startV = self.scalerV(startV)
         endV = self.scalerV(endV)
-
         startW = self.scalerW(startW)
         endW = self.scalerW(endW)        
 
@@ -197,3 +181,4 @@ class IvysaurusModel(nn.Module):
         combined = self.head(combined)
         logits = self.out(combined)
         return logits
+    

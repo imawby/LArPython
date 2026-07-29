@@ -5,7 +5,9 @@ grid_std = 0.0027
 nHits2D_mean = 592.2099
 nHits2D_std = 1215.6621
 trackScore_mean = 0.5912
-trackScore_std = 0.1593    
+trackScore_std = 0.1593
+distToEdge_mean = 104.0723
+distToEdge_std = 91.5137
 # TrackVars
 nTrackChildren_mean = 0.1725
 nTrackChildren_std = 0.4825

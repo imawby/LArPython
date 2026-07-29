@@ -55,15 +55,13 @@ def run_model(model, batch, device):
 ########################################################################################################    
 
 def main(args):
-
     torch.manual_seed(42)
-    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device:", device)
 
     # Load data
-    suffix = "Contained" if args.is_contained else "Exiting"
-    trainFileNames = glob.glob(f'{args.input_dir}/*_{suffix}.npz')
+    suffix = "Contained" if args.is_contained else "Exiting" if args.is_exiting else ""
+    trainFileNames = glob.glob(f'{args.input_dir}/*_{suffix}*.npz')
 
     grids_train = {key: [] for key in GRID_KEYS}
     grids_test  = {key: [] for key in GRID_KEYS}
@@ -110,7 +108,6 @@ def main(args):
     print('n_track_vars:', n_track_vars)
     print('n_shower_vars:', n_shower_vars)
     print("y_train:", y_train.shape, "y_test:", y_test.shape)
-
     print('Train')
     print(np.unique(np.argmax(y_train, axis=1), return_counts=True))
     print('Test')    
@@ -124,7 +121,8 @@ def main(args):
     # Class weights
     particle_type = np.argmax(y_train, axis=1)
     counts = [np.count_nonzero(particle_type == c) for c in range(n_classes)]
-    maxParticle = max(counts)
+    print("Class Counts:", counts)    
+    maxParticle = max(counts)    
     classWeights = np.sqrt(np.array([maxParticle / c for c in counts], dtype=np.float32))
     print("Class Weights:", classWeights)
     class_weights_t = torch.from_numpy(classWeights).to(device)
@@ -133,10 +131,8 @@ def main(args):
     model = IvysaurusModel(dimensions, n_classes, n_track_vars, n_shower_vars).to(device)
     optimiser = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss(weight=class_weights_t)
-    #criterion = nn.CrossEntropyLoss()
-    #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, T_max=args.n_epochs)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, mode='max', factor=0.5, patience=1)
-    model_path = f'{args.output_dir}/my_model_{"contained" if args.is_contained else "exiting"}.pt'
+    model_path = f'{args.output_dir}/my_model_{"contained" if args.is_contained else "exiting" if args.is_exiting else "all"}.pt'
 
     # Training loop
     best_val_acc = -1.0    
@@ -205,12 +201,10 @@ def main(args):
         print("Confusion Matrix:")
         print("                 Predicted")
         print("             " + "  ".join(f"{name:>9}" for name in class_names))
-
         for i, row in enumerate(cm):
             print(f"{class_names[i]:>10} " + "  ".join(f"{x:9d}" for x in row))
 
         scheduler.step(val_bal_acc)
-        #scheduler.step(val_loss)
 
         # checkpoint: save best on val_acc
         if val_bal_acc > best_val_acc:
@@ -224,14 +218,12 @@ def main(args):
 
 ########################################################################################################            
 
-
 def parse_cli():
     parser = argparse.ArgumentParser(description="Ivysaurus PID")
-
     parser.add_argument("--input_dir", type=str, required=True, help="Input file directory")    
     parser.add_argument("--output_dir", type=str, required=True, help="Dir to save model")
-    
     parser.add_argument("--is_contained", action="store_true", help="Training for contained particles?")
+    parser.add_argument("--is_exiting", action="store_true", help="Training for exiting particles?")    
     parser.add_argument("--n_epochs", type=int, default=10, help="Number of epochs, default=10")
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size, default=64")    
     parser.add_argument("--learning_rate", type=float, default=1e-3, help="Learning rate, default=1e-3")    
@@ -243,3 +235,4 @@ def parse_cli():
 if __name__ == "__main__":
     args = parse_cli()
     main(args)
+    

@@ -30,7 +30,7 @@ def main(args):
      endGridV, endGridV_valid,
      endGridW, endGridW_valid,
      pfpVars, trackVars, showerVars,
-     y) = FileHelper.readTree(f'{args.input_dir}/{args.file_name}', args.dimensions, this_detector_boundaries)
+     y) = FileHelper.readTree(args, this_detector_boundaries)
     
     nEntries = startGridU.shape[0]
 
@@ -42,7 +42,7 @@ def main(args):
         (pfpVars[:,2] > this_detector_boundaries["MinZ"]) & (pfpVars[:,2] < this_detector_boundaries["MaxZ"])
     
     print('n_contained:', np.sum(contained_mask))
-    print('n_contained:', np.sum(~contained_mask))
+    print('n_exiting:', np.sum(~contained_mask))
 
     for is_contained in [True, False] :        
         target_mask = (contained_mask == is_contained)
@@ -179,11 +179,9 @@ def parse_cli():
     parser.add_argument("--file_name", type=str, required=True, help="Name of file to process")
     parser.add_argument("--input_dir", type=str, required=True, help="Input file directory")    
     parser.add_argument("--output_dir", type=str, required=True, help="Dir to save processed files")
-
+    parser.add_argument("--pdgs", type=int, nargs="+", default=[13, 2212, 211, 11, 22], help="PDG IDs to collect - ATTN: order matters!")
     parser.add_argument("--detector", type=str, default="dune_hd", help="Detector: dune_hd, ")
     parser.add_argument("--dimensions", type=int, default=24, help="Grid dimensions")
-
-    
     parser.add_argument("--is_contained", action="store_true", help="Training for contained particles?")
 
     return parser.parse_args()

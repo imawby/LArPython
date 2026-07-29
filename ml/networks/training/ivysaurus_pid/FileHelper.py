@@ -7,7 +7,7 @@ import Normalisation
 
 ########################################################################################################
 
-def readTree(file_name, dimensions, detector) :
+def readTree(args, detector) :
 
     print('Reading trees. This may take a while...')
     
@@ -32,9 +32,10 @@ def readTree(file_name, dimensions, detector) :
         "IsPrimary"
     ]
 
+    file_name = f'{args.input_dir}/{args.file_name}'
     with uproot.open(file_name) as treeFile:
+        tree = treeFile["ivyTrain/ivysaur"]
         #tree = treeFile["ivysaur"]
-        tree = treeFile["ivysaur"]
         branches = tree.arrays(expressions=branch_names, library="np")
     
     # Grid lists
@@ -71,8 +72,7 @@ def readTree(file_name, dimensions, detector) :
     endZ = branches['RecoEndZ']
     isPrimary = branches['IsPrimary']
     del branches
-
-    dist_to_edge = np.min(
+    distToEdge = np.min(
         np.stack([
             np.abs(endX - detector['MinX']),
             np.abs(endX - detector['MaxX']),
@@ -82,50 +82,43 @@ def readTree(file_name, dimensions, detector) :
             np.abs(endZ - detector['MaxZ'])
         ], axis=0),
         axis=0)
-
-
-    print('dist_to_edge:', dist_to_edge.shape)
-    
     nEntries = particlePDG.shape[0]
 
     ###################################
-    # Only keep primaries
+    # Only collect taget PDGs
     ###################################
-    primaryMask = (abs(particlePDG) != 321) #& (isPrimary != 1) & (abs(particlePDG) != 2212)
-    #((abs(particlePDG) == 11) | (abs(particlePDG) == 13)) #| (abs(particlePDG) == 211) | (abs(particlePDG) == 22))
-    #& (isPrimary == 1)  & ((abs(particlePDG) == 11) | (abs(particlePDG) == 13) | (abs(particlePDG) == 211) | (abs(particlePDG) == 22))
-
-    startGridU = startGridU[primaryMask]
-    startGridV = startGridV[primaryMask]
-    startGridW = startGridW[primaryMask]
-    endGridU = endGridU[primaryMask]
-    endGridV = endGridV[primaryMask]
-    endGridW = endGridW[primaryMask]
-    nHits2D = nHits2D[primaryMask]
-    trackScore = trackScore[primaryMask]
-    dist_to_edge = dist_to_edge[primaryMask]    
-    endX = endX[primaryMask]
-    endY = endY[primaryMask]
-    endZ = endZ[primaryMask]
-    nTrackChildren = nTrackChildren[primaryMask]
-    nShowerChildren = nShowerChildren[primaryMask]
-    nGrandChildren = nGrandChildren[primaryMask]
-    nChildHits = nChildHits[primaryMask]
-    childEnergy = childEnergy[primaryMask]
-    childTrackScore = childTrackScore[primaryMask]
-    trackLength = trackLength[primaryMask]
-    trackWobble = trackWobble[primaryMask]
-    momComparison = momComparison[primaryMask]    
-    displacement = displacement[primaryMask]
-    dca = dca[primaryMask]
-    trackStubLength = trackStubLength[primaryMask]
-    nuVertexAvSeparation = nuVertexAvSeparation[primaryMask]
-    nuVertexChargeAsymmetry = nuVertexChargeAsymmetry[primaryMask]
-    particlePDG = particlePDG[primaryMask]
-    isPrimary = isPrimary[primaryMask]
+    target_mask = np.isin(np.abs(particlePDG), args.pdgs)
+    
+    startGridU = startGridU[target_mask]
+    startGridV = startGridV[target_mask]
+    startGridW = startGridW[target_mask]
+    endGridU = endGridU[target_mask]
+    endGridV = endGridV[target_mask]
+    endGridW = endGridW[target_mask]
+    nHits2D = nHits2D[target_mask]
+    trackScore = trackScore[target_mask]
+    distToEdge = distToEdge[target_mask]    
+    endX = endX[target_mask]
+    endY = endY[target_mask]
+    endZ = endZ[target_mask]
+    nTrackChildren = nTrackChildren[target_mask]
+    nShowerChildren = nShowerChildren[target_mask]
+    nGrandChildren = nGrandChildren[target_mask]
+    nChildHits = nChildHits[target_mask]
+    childEnergy = childEnergy[target_mask]
+    childTrackScore = childTrackScore[target_mask]
+    trackLength = trackLength[target_mask]
+    trackWobble = trackWobble[target_mask]
+    momComparison = momComparison[target_mask]    
+    displacement = displacement[target_mask]
+    dca = dca[target_mask]
+    trackStubLength = trackStubLength[target_mask]
+    nuVertexAvSeparation = nuVertexAvSeparation[target_mask]
+    nuVertexChargeAsymmetry = nuVertexChargeAsymmetry[target_mask]
+    particlePDG = particlePDG[target_mask]
+    isPrimary = isPrimary[target_mask]
     nEntries = len(particlePDG)
 
-    print("After primary selection:", nEntries)
     # Refinement of the particlePDG vector
     print('We have ', str(nEntries), ' PFParticles overall!')
     print('nMuons: ', np.count_nonzero(abs(particlePDG) == 13))
@@ -188,12 +181,13 @@ def readTree(file_name, dimensions, detector) :
     print(f'trackScore mean: {np.mean(trackScore):.4f}')
     print(f'trackScore std: {np.std(trackScore):.4f}')
     print('--------------------------------------------------')
-    print(f'distToEdge mean: {np.mean(dist_to_edge):.4f}')
-    print(f'distToEdge std: {np.std(dist_to_edge):.4f}')    
+    print(f'distToEdge mean: {np.mean(distToEdge):.4f}')
+    print(f'distToEdge std: {np.std(distToEdge):.4f}')    
     print('--------------------------------------------------')
     
     nHits2D = (nHits2D - Normalisation.nHits2D_mean) / Normalisation.nHits2D_std
     trackScore = (trackScore - Normalisation.trackScore_mean) /  Normalisation.trackScore_std
+    distToEdge = (distToEdge - Normalisation.distToEdge_mean) / Normalisation.distToEdge_std
     
     # Track vars 
     # Work out validity (invalid = -1)
@@ -279,6 +273,7 @@ def readTree(file_name, dimensions, detector) :
     nuVertexChargeAsymmetry[nuVertexChargeAsymmetry_valid] = (nuVertexChargeAsymmetry[nuVertexChargeAsymmetry_valid] - Normalisation.nuVertexChargeAsymmetry_mean) / Normalisation.nuVertexChargeAsymmetry_std
 
     # Convert to expected format
+    dimensions = args.dimensions
     startGridU = startGridU.reshape((nEntries, dimensions, dimensions, 1))
     startGridV = startGridV.reshape((nEntries, dimensions, dimensions, 1))
     startGridW = startGridW.reshape((nEntries, dimensions, dimensions, 1))
@@ -294,6 +289,8 @@ def readTree(file_name, dimensions, detector) :
     nHits2D = nHits2D.reshape((nEntries, 1))
     trackScore = trackScore.reshape((nEntries, 1))
     nTrackChildren = nTrackChildren.reshape((nEntries, 1))
+    distToEdge = distToEdge.reshape((nEntries,1))
+    isPrimary = isPrimary.astype(np.float32).reshape((nEntries, 1))    
     nShowerChildren = nShowerChildren.reshape((nEntries, 1))
     nGrandChildren = nGrandChildren.reshape((nEntries, 1))
     nChildHits = nChildHits.reshape((nEntries, 1))
@@ -335,13 +332,13 @@ def readTree(file_name, dimensions, detector) :
                                 childTrackScore, childTrackScore_valid,
                                 trackLength, trackLength_valid,
                                 trackWobble, trackWobble_valid,
-                                momComparison, momComparison_valid, nHits2D, trackScore), axis=1)
+                                momComparison, momComparison_valid, nHits2D, trackScore, distToEdge, isPrimary), axis=1)
     showerVars = np.concatenate((displacement, displacement_valid,
                                  dca, dca_valid,
                                  trackStubLength, trackStubLength_valid,
                                  nuVertexAvSeparation, nuVertexAvSeparation_valid,
                                  nuVertexChargeAsymmetry, nuVertexChargeAsymmetry_valid), axis=1)
-   
+
     # muons = 0, protons = 1, pions = 2, kaons = 3, electrons = 4, photons = 5
     particlePDG[abs(particlePDG) == 13] = 0
     particlePDG[abs(particlePDG) == 2212] = 1
@@ -349,25 +346,6 @@ def readTree(file_name, dimensions, detector) :
     # particlePDG[abs(particlePDG) == 321] = 3
     particlePDG[abs(particlePDG) == 11] = 3
     particlePDG[abs(particlePDG) == 22] = 4
-    
-    # remove kaons!
-    # keepMask = (abs(particlePDG[:,0]) != 321) & (isPrimary == 1)
-    # particlePDG = particlePDG[keepMask]
-    # startGridU = startGridU[keepMask]
-    # startGridV = startGridV[keepMask]
-    # startGridW = startGridW[keepMask]
-    # startGridU_valid = startGridU_valid[keepMask]
-    # startGridV_valid = startGridV_valid[keepMask]
-    # startGridW_valid = startGridW_valid[keepMask]
-    # endGridU = endGridU[keepMask]
-    # endGridV = endGridV[keepMask]
-    # endGridW = endGridW[keepMask]
-    # endGridU_valid = endGridU_valid[keepMask]
-    # endGridV_valid = endGridV_valid[keepMask]
-    # endGridW_valid = endGridW_valid[keepMask]        
-    # pfpVars = pfpVars[keepMask]
-    # trackVars = trackVars[keepMask]
-    # showerVars = showerVars[keepMask]
     y = to_categorical(particlePDG, 5)
     
     return startGridU, startGridU_valid, startGridV, startGridV_valid, startGridW, startGridW_valid, endGridU, endGridU_valid, endGridV, endGridV_valid, endGridW, endGridW_valid, pfpVars, trackVars, showerVars, y
