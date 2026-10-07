@@ -121,8 +121,8 @@ class IvysaurusModel(nn.Module):
         self.scalerV = ViewScaler()
         self.scalerW = ViewScaler()
 
-        # Each branch: 2 input channels for start and end grid in each of three views
-        encoder_out = 128 * 2 * 2 * 3
+        # Each branch: three (gap, gmp, std) 128 output for start and end grid in each of three views
+        encoder_out = 384 * 2 * 3
         combined_feat = encoder_out + nTrackVars + nShowerVars
 
         self.head = nn.Sequential(
