@@ -57,7 +57,6 @@ def main(args):
 
     # Load data
     trainFileNames = glob.glob(f'{args.input_dir}/*.npz')
-    trainFileNames = ['/home/imawby/LArPython/files_test/ivy_DR_nue_1.npz']
     grids_train = {key: [] for key in MapKeys.GRID_KEYS}
     grids_test  = {key: [] for key in MapKeys.GRID_KEYS}
     trackVars_train = []

@@ -172,7 +172,7 @@ def readTree(args) :
     particlePDG[abs(particlePDG) == 2212] = 1
     particlePDG[abs(particlePDG) == 211] = 2
     particlePDG[(abs(particlePDG) == 11) & (~lowEnergy_mask)] = 3
-    particlePDG[(abs(particlePDG) == 11) & (lowEnergy_mask)] = 4    
+    particlePDG[(abs(particlePDG) == 11) & (lowEnergy_mask)] = 4
     particlePDG[abs(particlePDG) == 22] = 5
     y = to_categorical(particlePDG, 6)
     
